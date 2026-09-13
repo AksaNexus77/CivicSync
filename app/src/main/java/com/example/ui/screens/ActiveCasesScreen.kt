@@ -222,7 +222,11 @@ fun ActiveCasesScreen(
                 }
             }
         } else {
-            items(filteredCases, key = { it.id }) { item ->
+            items(
+                items = filteredCases,
+                key = { it.id },
+                contentType = { "case_card" }
+            ) { item ->
                 CaseCard(
                     case = item,
                     language = language,

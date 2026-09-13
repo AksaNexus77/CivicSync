@@ -1,0 +1,17 @@
+# Baseline Profile for CivicSync Global
+# Pre-compiles critical user journeys (CUJ) to eliminate JIT compilation stutter during cold startup
+Lcom/example/CivicSyncApplication;
+Lcom/example/MainActivity;
+Lcom/example/ui/CivicSyncAppKt;
+Lcom/example/ui/CivicSyncViewModel;
+Lcom/example/ui/CivicSyncUiState;
+Lcom/example/ui/screens/IntakeScreenKt;
+Lcom/example/ui/screens/ActionPlanScreenKt;
+Lcom/example/ui/screens/ActiveCasesScreenKt;
+Lcom/example/ui/screens/DocumentVaultScreenKt;
+Lcom/example/ui/screens/OfflineChecklistScreenKt;
+Lcom/example/ui/screens/SettingsScreenKt;
+Lcom/example/ui/screens/PrivacyPolicyScreenKt;
+Lcom/example/data/local/CivicSyncDatabase;
+Lcom/example/data/repository/CivicSyncRepositoryImpl;
+Lcom/example/data/api/CivicSyncApiServiceImpl;

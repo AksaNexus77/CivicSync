@@ -11,7 +11,8 @@ enum class NavigationDest {
     DOCUMENT_VAULT,
     OFFLINE_GUIDES,
     RESOURCES,
-    SETTINGS
+    SETTINGS,
+    PRIVACY_POLICY
 }
 
 /**

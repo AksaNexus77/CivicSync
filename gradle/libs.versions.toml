@@ -43,9 +43,13 @@ credentials = "1.5.0"
 googleid = "1.1.1"
 kotlinxSerialization = "1.7.3"
 hilt = "2.51.1"
+coreSplashscreen = "1.0.1"
+profileinstaller = "1.4.1"
 
 
 [libraries]
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
+androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

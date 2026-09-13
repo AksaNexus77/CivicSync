@@ -123,7 +123,11 @@ fun OfflineChecklistScreen(
             }
         }
 
-        items(checklists, key = { it.id }) { item ->
+        items(
+            items = checklists,
+            key = { it.id },
+            contentType = { "offline_checklist_item" }
+        ) { item ->
             val isUrdu = language == AppLanguage.URDU
             val category = if (isUrdu) item.categoryUr else item.category
             val title = if (isUrdu) item.titleUr else item.title

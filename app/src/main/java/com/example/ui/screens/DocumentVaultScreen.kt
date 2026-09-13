@@ -242,7 +242,11 @@ fun DocumentVaultScreen(
                 }
             }
         } else {
-            items(documents, key = { it.id }) { doc ->
+            items(
+                items = documents,
+                key = { it.id },
+                contentType = { "vault_doc" }
+            ) { doc ->
                 VaultDocCard(
                     document = doc,
                     language = language,

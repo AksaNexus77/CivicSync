@@ -17,13 +17,24 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,21 +48,78 @@ import com.example.ui.components.GlassmorphicCard
 import com.example.ui.theme.Amber400
 import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Indigo400
+import com.example.ui.theme.Rose400
 import com.example.ui.theme.Slate100
 import com.example.ui.theme.Slate300
 import com.example.ui.theme.Slate400
 import com.example.ui.theme.Slate500
 import com.example.ui.theme.Slate700
 import com.example.ui.theme.Slate800
+import com.example.ui.theme.Slate900
 
 @Composable
 fun SettingsScreen(
+    onOpenPrivacyPolicy: () -> Unit = {},
+    onClearAllData: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var showClearDataDialog by remember { mutableStateOf(false) }
+
     val isKeyConfigured = try {
         BuildConfig.GEMINI_API_KEY.isNotBlank() && BuildConfig.GEMINI_API_KEY != "MY_GEMINI_API_KEY"
     } catch (e: Throwable) {
         false
+    }
+
+    if (showClearDataDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDataDialog = false },
+            containerColor = Slate900,
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteForever,
+                        contentDescription = null,
+                        tint = Rose400,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Permanent Data Purge",
+                        color = Slate100,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to permanently erase all saved cases, document vault records, and offline progress from this device? This action complies with Google Play's User Data Deletion standards and cannot be undone.",
+                    color = Slate300,
+                    fontSize = 13.sp,
+                    lineHeight = 19.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showClearDataDialog = false
+                        onClearAllData()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Rose400),
+                    modifier = Modifier.testTag("confirm_clear_data_button")
+                ) {
+                    Text("Delete Everything", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showClearDataDialog = false }
+                ) {
+                    Text("Cancel", color = Slate400)
+                }
+            }
+        )
     }
 
     LazyColumn(
@@ -215,6 +283,115 @@ fun SettingsScreen(
                         color = Slate300,
                         lineHeight = 19.sp
                     )
+                }
+            }
+        }
+
+        // Privacy Policy & Google Play Disclosures Card
+        item {
+            GlassmorphicCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("settings_privacy_policy_card"),
+                backgroundColor = Color.White.copy(alpha = 0.04f)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Policy,
+                            contentDescription = null,
+                            tint = Emerald400,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Privacy Policy & Disclosures",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Slate100
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "Review our Google Play compliant disclosures on data minimization, ephemeral Gemini AI processing, and zero third-party data broker sharing.",
+                        fontSize = 12.sp,
+                        color = Slate300,
+                        lineHeight = 19.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Button(
+                        onClick = onOpenPrivacyPolicy,
+                        colors = ButtonDefaults.buttonColors(containerColor = Emerald400),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("privacy_policy_button")
+                    ) {
+                        Text(
+                            text = "Read Full Privacy Policy",
+                            color = Slate900,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        // User Data Deletion & Account Erasure (Play Store Compliance)
+        item {
+            GlassmorphicCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("settings_data_erasure_card"),
+                backgroundColor = Rose400.copy(alpha = 0.05f),
+                borderColor = Rose400.copy(alpha = 0.25f)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteForever,
+                            contentDescription = null,
+                            tint = Rose400,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Data Safety & Permanent Deletion",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Rose400
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "In compliance with Google Play's User Data & Account Deletion policy, you may exercise your right to erasure. Purging your data will permanently delete all stored cases, document vault records, and procedural checklists from this device.",
+                        fontSize = 12.sp,
+                        color = Slate300,
+                        lineHeight = 19.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    OutlinedButton(
+                        onClick = { showClearDataDialog = true },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Rose400),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Rose400.copy(alpha = 0.5f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("clear_data_button")
+                    ) {
+                        Text(
+                            text = "Clear All My Data",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                    }
                 }
             }
         }

@@ -83,4 +83,10 @@ interface CivicSyncRepository {
      * Seeds statutory checklists if database is newly initialized.
      */
     suspend fun ensureOfflineChecklistSeeded()
+
+    /**
+     * Permanently purges all user data: saved cases, vault documents, and resets checklists.
+     * Complies with Google Play User Data Deletion and privacy regulations.
+     */
+    suspend fun clearAllUserData()
 }

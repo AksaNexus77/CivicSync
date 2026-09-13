@@ -81,6 +81,7 @@ import com.example.ui.screens.ActiveCasesScreen
 import com.example.ui.screens.DocumentVaultScreen
 import com.example.ui.screens.IntakeScreen
 import com.example.ui.screens.OfflineChecklistScreen
+import com.example.ui.screens.PrivacyPolicyScreen
 import com.example.ui.screens.ResourcesScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.Amber400
@@ -386,7 +387,15 @@ fun MainScreenRouter(
             )
         }
         NavigationDest.SETTINGS -> {
-            SettingsScreen()
+            SettingsScreen(
+                onOpenPrivacyPolicy = { viewModel.navigateTo(NavigationDest.PRIVACY_POLICY) },
+                onClearAllData = { viewModel.clearAllUserData() }
+            )
+        }
+        NavigationDest.PRIVACY_POLICY -> {
+            PrivacyPolicyScreen(
+                onBack = { viewModel.navigateTo(NavigationDest.SETTINGS) }
+            )
         }
     }
 }

@@ -26,6 +26,9 @@ interface SavedCaseDao {
 
     @Query("DELETE FROM saved_cases WHERE id = :caseId")
     suspend fun deleteCase(caseId: String)
+
+    @Query("DELETE FROM saved_cases")
+    suspend fun deleteAllCases()
 }
 
 @Dao
@@ -38,6 +41,9 @@ interface VaultDocumentDao {
 
     @Query("DELETE FROM vault_documents WHERE id = :docId")
     suspend fun deleteDocument(docId: String)
+
+    @Query("DELETE FROM vault_documents")
+    suspend fun deleteAllDocuments()
 }
 
 @Dao
@@ -50,6 +56,9 @@ interface OfflineChecklistDao {
 
     @Query("UPDATE offline_checklists SET isCompleted = :completed WHERE id = :id")
     suspend fun updateCompletion(id: String, completed: Boolean)
+
+    @Query("UPDATE offline_checklists SET isCompleted = 0")
+    suspend fun resetAllChecklistCompletions()
 
     @Query("SELECT COUNT(*) FROM offline_checklists")
     suspend fun count(): Int

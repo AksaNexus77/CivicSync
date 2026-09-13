@@ -575,6 +575,20 @@ class CivicSyncViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Permanently purges all user cases, vault documents, and resets offline checklist state.
+     * Complies with Google Play User Data & Account Deletion Policy.
+     */
+    fun clearAllUserData() {
+        viewModelScope.launch {
+            repository.clearAllUserData()
+            _selectedCaseReview.value = null
+            _uiState.value = CivicSyncUiState.Idle()
+            showToast("All personal records & vault data permanently purged")
+            performHapticFeedback(100L)
+        }
+    }
+
     // --- Navigation & Audio ---
 
     fun navigateTo(dest: NavigationDest) {

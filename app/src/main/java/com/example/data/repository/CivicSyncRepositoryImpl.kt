@@ -90,4 +90,10 @@ class CivicSyncRepositoryImpl @Inject constructor(
             database.offlineChecklistDao().insertAll(CivicSyncDatabase.seedOfflineChecklist())
         }
     }
+
+    override suspend fun clearAllUserData() {
+        database.savedCaseDao().deleteAllCases()
+        database.vaultDocumentDao().deleteAllDocuments()
+        database.offlineChecklistDao().resetAllChecklistCompletions()
+    }
 }
