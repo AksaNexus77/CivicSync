@@ -146,7 +146,7 @@ fun IntakeScreen(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "EMPATHETIC CASEWORKER AI",
+                        text = "PAKISTAN LEGAL AID & SOCIAL WELFARE AI",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.5.sp,
@@ -164,7 +164,7 @@ fun IntakeScreen(
                 )
 
                 Text(
-                    text = "Describe your situation, and let's build your path forward with eligible benefits, defense timelines, and formal appeal letters.",
+                    text = "Empathetic guidance for BISP Kafalat, NADRA CNIC, Sehat Sahulat Card, EOBI Pension, and Wafaqi Mohtasib administrative appeals across Pakistan.",
                     fontSize = 14.sp,
                     color = Slate300,
                     lineHeight = 22.sp
@@ -174,7 +174,7 @@ fun IntakeScreen(
 
                 // Quick Scenario Preset Chips
                 Text(
-                    text = "Select a sample case to test:",
+                    text = "Select a sample Pakistani citizen case:",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Slate400,
@@ -187,32 +187,42 @@ fun IntakeScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     PresetChip(
-                        label = "Housing Eviction & Job Loss",
+                        label = "BISP Biometric Error",
                         onClick = {
                             onPresetSelected(
-                                "My landlord gave me a 3-day pay-or-quit notice because I lost my manufacturing job 3 weeks ago. I have zero savings and two young children (ages 4 and 7). I haven't missed rent in 3 years before this.",
+                                "Meri walida ki BISP Kafalat payment biometric verification na honay ki wajah se rok di gayi hai. Woh boorhi hain aur retailer machine par un k fingerprints nahi aa rahay. Hamaray paas ration k paisay nahi hain.",
                                 "Immediate Crisis",
-                                "California"
+                                "Punjab"
                             )
                         }
                     )
                     PresetChip(
-                        label = "Medicaid Benefit Denial",
+                        label = "Sehat Card Denial at Hospital",
                         onClick = {
                             onPresetSelected(
-                                "I received a notice stating my family's Medicaid coverage is terminating at the end of the month due to missing paperwork that I already mailed in. My daughter has insulin-dependent diabetes and needs daily supplies.",
+                                "My father was brought to an empaneled hospital for emergency cardiac treatment, but the admission counter refused his Sehat Card Plus and demanded Rs. 150,000 cash advance.",
+                                "Immediate Crisis",
+                                "KPK"
+                            )
+                        }
+                    )
+                    PresetChip(
+                        label = "NADRA Blocked CNIC",
+                        onClick = {
+                            onPresetSelected(
+                                "NADRA has put my CNIC in digitally held / blocked status citing family tree (FRC) mismatch. Due to this, my mobile SIM and bank account are frozen.",
                                 "This Week",
-                                "New York"
+                                "Sindh"
                             )
                         }
                     )
                     PresetChip(
-                        label = "Emergency Food Aid (SNAP)",
+                        label = "EOBI Survivor Pension Delay",
                         onClick = {
                             onPresetSelected(
-                                "I have only $15 left in my checking account and our food will run out in 2 days. My utility bill was doubled this winter and I need immediate emergency nutrition assistance.",
-                                "Immediate Crisis",
-                                "Texas"
+                                "My late husband was an insured worker with EOBI for 16 years, but EOBI regional office has withheld survivor pension for over 12 months citing employer documentation issues.",
+                                "Planning Ahead",
+                                "Balochistan"
                             )
                         }
                     )
@@ -282,7 +292,7 @@ fun IntakeScreen(
                         .testTag("situation_input_textarea"),
                     placeholder = {
                         Text(
-                            text = "e.g., My landlord is evicting me next week because I lost my job, and I have no savings. I have two kids.",
+                            text = "e.g., Meri walida ka BISP biometric verify nahi ho raha aur hospital mein Sehat Card reject kar diya hai. Hamaray paas ration k paise nahi hain. Ya NADRA CNIC block hai.",
                             fontSize = 13.sp,
                             color = Slate500,
                             lineHeight = 20.sp
@@ -311,7 +321,7 @@ fun IntakeScreen(
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Text(
-                    text = "Local legal protections and statutory deadlines vary by state and timeframe.",
+                    text = "Social protection programs, Sehat Card rules, and administrative offices vary by Pakistani province.",
                     fontSize = 12.sp,
                     color = Slate400,
                     modifier = Modifier.padding(bottom = 12.dp)
@@ -418,10 +428,10 @@ fun IntakeScreen(
                         }
                     }
 
-                    // State / Region Input
+                    // Province / Region Input
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "State / Region",
+                            text = "Province / Region",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Slate400,
@@ -444,7 +454,7 @@ fun IntakeScreen(
                                 )
                             },
                             placeholder = {
-                                Text("e.g., California", fontSize = 12.sp, color = Slate500)
+                                Text("e.g., Punjab, Sindh, KPK", fontSize = 12.sp, color = Slate500)
                             },
                             shape = RoundedCornerShape(10.dp),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -457,6 +467,33 @@ fun IntakeScreen(
                                 cursorColor = Emerald400
                             )
                         )
+                    }
+                }
+
+                // Quick Province Chips
+                Spacer(modifier = Modifier.height(10.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    listOf("Punjab", "Sindh", "KPK", "Balochistan", "Islamabad").forEach { prov ->
+                        val isSelected = locationText.equals(prov, ignoreCase = true)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) Emerald500.copy(alpha = 0.2f) else Slate800.copy(alpha = 0.6f))
+                                .border(1.dp, if (isSelected) Emerald400 else Slate700, RoundedCornerShape(8.dp))
+                                .clickable { onLocationChanged(prov) }
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = prov,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) Emerald400 else Slate300
+                            )
+                        }
                     }
                 }
 

@@ -27,52 +27,57 @@ class ExampleRobolectricTest {
   }
 
   @Test
-  fun `test fallback plan generation`() {
+  fun `test fallback plan generation for Pakistan welfare context`() {
     val plan = GeminiCaseworkerService.buildEmpatheticSynthesizedPlan(
-      situation = "Landlord gave me 3 days notice due to sudden job loss",
+      situation = "Meri walida ki BISP Kafalat biometric verify nahi ho rahi aur Sehat Card hospital mein reject ho gaya",
       urgency = "Immediate Crisis",
-      location = "California"
+      location = "Punjab"
     )
     assertTrue(plan.eligibilitySummary.isNotEmpty())
     assertTrue(plan.actionChecklist.isNotEmpty())
-    assertTrue(plan.draftLetter.contains("FORMAL NOTICE"))
-    assertTrue(plan.advocacyScript.contains("Hello, my name is"))
+    assertTrue(plan.draftLetter.contains("[Name]"))
+    assertTrue(plan.draftLetter.contains("[CNIC Number]"))
+    assertTrue(plan.draftLetter.contains("[Address]"))
+    assertTrue(plan.advocacyScript.contains("[CNIC Number]"))
+    assertTrue(plan.disclaimer.contains("This is AI-generated guidance, not licensed legal advice"))
   }
 
   @Test
-  fun `test json parser with raw schema`() {
+  fun `test json parser with Pakistani welfare schema`() {
     val rawJson = """
       {
         "eligibilitySummary": [
-          {"benefit": "SNAP Emergency", "reason": "Zero income", "urgency": "Immediate Crisis"}
+          {"benefit": "BISP Benazir Kafalat", "reason": "PMT score under eligibility threshold", "urgency": "Immediate Crisis"},
+          {"benefit": "Sehat Sahulat Card", "reason": "Empaneled indoor hospitalization", "urgency": "Immediate Crisis"}
         ],
         "actionChecklist": [
-          {"task": "File Notice", "timeline": "Within 24h", "category": "Legal Defense"}
+          {"task": "Visit NADRA center with CNIC", "timeline": "Immediate (Day 1)", "category": "Civil Identity"},
+          {"task": "File complaint with Wafaqi Mohtasib", "timeline": "Within 48 hours", "category": "Ombudsman"}
         ],
-        "draftLetter": "To Whom It May Concern...",
-        "advocacyScript": "I am calling to request review...",
-        "disclaimer": "This is AI-generated guidance, not licensed legal advice."
+        "draftLetter": "# Grievance to Deputy Commissioner\n\nI, [Name], CNIC: [CNIC Number], resident of [Address]...",
+        "advocacyScript": "Assalam-o-Alaikum, mera naam [Name] hai, CNIC [CNIC Number]...",
+        "disclaimer": "This is AI-generated guidance, not licensed legal advice. Please verify with a local lawyer or relevant government office."
       }
     """.trimIndent()
 
     val parsed = GeminiCaseworkerService.parseJsonToActionPlan(JSONObject(rawJson))
-    assertEquals(1, parsed.eligibilitySummary.size)
-    assertEquals("SNAP Emergency", parsed.eligibilitySummary[0].benefit)
-    assertEquals(1, parsed.actionChecklist.size)
-    assertEquals("File Notice", parsed.actionChecklist[0].task)
-    assertEquals("This is AI-generated guidance, not licensed legal advice.", parsed.disclaimer)
+    assertEquals(2, parsed.eligibilitySummary.size)
+    assertEquals("BISP Benazir Kafalat", parsed.eligibilitySummary[0].benefit)
+    assertEquals(2, parsed.actionChecklist.size)
+    assertEquals("Visit NADRA center with CNIC", parsed.actionChecklist[0].task)
+    assertEquals("This is AI-generated guidance, not licensed legal advice. Please verify with a local lawyer or relevant government office.", parsed.disclaimer)
   }
 
   @Test
-  fun `test viewmodel state transitions`() {
+  fun `test viewmodel state transitions and defaults`() {
     val vm = CivicSyncViewModel()
     assertEquals(WizardStep.INTAKE, vm.uiState.value.currentStep)
+    assertEquals("Punjab", vm.uiState.value.locationText)
 
-    vm.onSituationChanged("Test eviction notice received")
-    assertEquals("Test eviction notice received", vm.uiState.value.situationText)
+    vm.onSituationChanged("BISP biometric failure report")
+    assertEquals("BISP biometric failure report", vm.uiState.value.situationText)
 
     vm.selectTab(PlanTab.CHECKLIST)
     assertEquals(PlanTab.CHECKLIST, vm.uiState.value.activeTab)
   }
 }
-

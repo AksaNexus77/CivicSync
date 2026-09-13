@@ -45,7 +45,7 @@ data class CivicSyncUiState(
     val activeTab: PlanTab = PlanTab.ELIGIBILITY,
     val situationText: String = "",
     val urgencyLevel: String = "Immediate Crisis",
-    val locationText: String = "California",
+    val locationText: String = "Punjab",
     val isLoading: Boolean = false,
     val loadingMessageIndex: Int = 0,
     val currentPlan: CivicActionPlan? = null,
@@ -56,39 +56,46 @@ data class CivicSyncUiState(
 
 fun defaultResources(): List<CivicResource> = listOf(
     CivicResource(
-        title = "National Legal Aid & Defender Association",
-        category = "Legal Representation",
-        description = "Network of public defense and civil legal aid advocates across all 50 states for low-income individuals.",
-        contact = "1-800-LAW-AID1",
+        title = "Benazir Income Support Programme (BISP) Citizen Grievance",
+        category = "Social Protection & Kafalat",
+        description = "Official national helpline for BISP Kafalat payments, survey registration, and biometric dispute resolution.",
+        contact = "0800-26477",
+        badge = "Toll-Free"
+    ),
+    CivicResource(
+        title = "Wafaqi Mohtasib (Federal Ombudsman Secretariat)",
+        category = "Administrative Grievance Tribunal",
+        description = "Statutory constitutional body resolving public complaints against federal agencies (NADRA, BISP, EOBI, WAPDA/SNGPL) free of cost.",
+        contact = "1055",
+        badge = "Free Tribunal"
+    ),
+    CivicResource(
+        title = "NADRA Citizen Facilitation Helpline",
+        category = "Civil Registration & CNIC",
+        description = "Inquiries regarding blocked CNICs, Family Registration Certificates (FRC), CRC/B-Forms, and biometric verification boards.",
+        contact = "1777",
+        badge = "Helpline"
+    ),
+    CivicResource(
+        title = "Sehat Sahulat Program / Sehat Card Plus",
+        category = "Universal Health Coverage",
+        description = "Free medical care, surgical treatment, and emergency hospitalization coverage for citizens across Pakistan.",
+        contact = "0800-09009",
+        badge = "Healthcare"
+    ),
+    CivicResource(
+        title = "Pakistan Bait-ul-Mal (PBM) Emergency Assistance",
+        category = "Mustahiqeen & Zakat Relief",
+        description = "Financial assistance, life-saving medical grants, artificial limbs, and education stipends for impoverished individuals.",
+        contact = "0800-66666",
+        badge = "Emergency Aid"
+    ),
+    CivicResource(
+        title = "Legal Aid Society & Sindh Legal Advisory Call Center",
+        category = "Pro Bono Legal Representation",
+        description = "Free civil, family, and criminal legal advice provided by licensed high court advocates and legal aid caseworkers.",
+        contact = "0800-70806",
         badge = "Free Counsel"
-    ),
-    CivicResource(
-        title = "National Eviction Defense Hotline & 2-1-1",
-        category = "Housing & Emergency Stay",
-        description = "Connects immediately with certified housing counselors, emergency tenant protection funds, and mediation.",
-        contact = "Dial 2-1-1 (24/7 Toll-Free)",
-        badge = "24/7 Hotline"
-    ),
-    CivicResource(
-        title = "USDA SNAP Emergency Nutrition Helpline",
-        category = "Food Security",
-        description = "Expedited emergency food stamp processing for households with less than $100 liquid assets or zero income.",
-        contact = "1-800-221-5689",
-        badge = "Nutrition"
-    ),
-    CivicResource(
-        title = "LawHelp.org Free Civil Legal Navigator",
-        category = "Bureaucracy Navigation",
-        description = "Comprehensive legal rights manuals, statutory appeal deadlines, and pro bono attorney directories by county.",
-        contact = "www.lawhelp.org",
-        badge = "Directory"
-    ),
-    CivicResource(
-        title = "National Consumer Law Center (NCLC)",
-        category = "Consumer & Debt Defense",
-        description = "Protections against unlawful collections, garnishment exemptions, and medical debt appeal templates.",
-        contact = "www.nclc.org",
-        badge = "Rights Guide"
     )
 )
 
@@ -100,10 +107,10 @@ class CivicSyncViewModel : ViewModel() {
     private var loadingCycleJob: Job? = null
 
     val loadingMessages = listOf(
-        "Analyzing local policies...",
-        "Drafting legal documents...",
-        "Compiling your action plan...",
-        "Verifying statutory deadlines and appeal rights..."
+        "Analyzing provincial social welfare policies & BISP rules...",
+        "Reviewing NADRA, Sehat Card, and EOBI guidelines...",
+        "Drafting formal representation to Pakistani authorities...",
+        "Compiling your constitutional & statutory action plan..."
     )
 
     fun onSituationChanged(text: String) {

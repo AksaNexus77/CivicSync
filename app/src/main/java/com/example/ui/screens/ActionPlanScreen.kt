@@ -768,7 +768,7 @@ fun AdvocacyScriptCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Conversational, Assertive Script for Caseworker Calls:",
+                        text = "Advocacy Script for Pakistani Helplines (BISP 0800-26477, NADRA 1777, Mohtasib 1055):",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Indigo400
@@ -797,14 +797,14 @@ fun AdvocacyScriptCard(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Advocate Tips when speaking to agencies:",
+                    text = "Helpline Advocacy Tips (BISP, NADRA, Public Offices):",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = Slate300
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "• Note the date, time, and full name of the representative\n• Ask for your confirmation or document tracking number\n• Politely insist on written confirmation of any deadline extensions",
+                    text = "• Keep your 13-digit CNIC card in hand before calling\n• Always ask for the official Complaint / Diary Tracking Number\n• Note the name and designation of the call representative\n• Inquire about the next Tehsil / Zonal office open court (Khuli Kachehri)",
                     fontSize = 12.sp,
                     color = Slate400,
                     lineHeight = 18.sp
