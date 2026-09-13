@@ -7,12 +7,15 @@ import com.example.data.model.CivicActionPlan
  */
 enum class NavigationDest {
     HOME,
+    INTAKE_WIZARD,
     ACTIVE_CASES,
     DOCUMENT_VAULT,
     OFFLINE_GUIDES,
     RESOURCES,
     SETTINGS,
-    PRIVACY_POLICY
+    PRIVACY_POLICY,
+    ONBOARDING,
+    AUTH
 }
 
 /**

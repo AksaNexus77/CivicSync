@@ -71,7 +71,7 @@ class CivicSyncApiServiceImpl @Inject constructor(
     companion object {
         private const val TAG = "CivicSyncApiService"
         private const val GEMINI_ENDPOINT =
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent"
 
         private val JSON_PARSER = Json {
             ignoreUnknownKeys = true
@@ -110,6 +110,9 @@ class CivicSyncApiServiceImpl @Inject constructor(
                 ],
                 "draftLetter": "String (Formal administrative representation in clean markdown)",
                 "advocacyScript": "String (Maximum 100 words conversational phone/counter script)",
+                "localHelplines": [
+                  { "title": "String", "contact": "String", "category": "String", "description": "String" }
+                ],
                 "disclaimer": "String (Statutory non-legal advice notice)"
               }
         """.trimIndent()
@@ -260,6 +263,22 @@ class CivicSyncApiServiceImpl @Inject constructor(
                 }
             }
 
+            val helplineList = mutableListOf<com.example.data.model.HelplineItem>()
+            val helplineArr = obj.optJSONArray("localHelplines")
+            if (helplineArr != null) {
+                for (i in 0 until helplineArr.length()) {
+                    val item = helplineArr.optJSONObject(i) ?: continue
+                    helplineList.add(
+                        com.example.data.model.HelplineItem(
+                            title = item.optString("title", "Emergency Helpline"),
+                            contact = item.optString("contact", "1055"),
+                            category = item.optString("category", "Legal Aid & Welfare"),
+                            description = item.optString("description", "")
+                        )
+                    )
+                }
+            }
+
             CivicActionPlan(
                 eligibilitySummary = eligList.ifEmpty {
                     listOf(EligibilityItem("Emergency Public Relief", "Based on submitted grievance statement", "Immediate"))
@@ -269,10 +288,27 @@ class CivicSyncApiServiceImpl @Inject constructor(
                 },
                 draftLetter = obj.optString("draftLetter", "Formal representation regarding citizen hardship in $region, $country."),
                 advocacyScript = obj.optString("advocacyScript", "Hello, I am calling regarding my urgent grievance in $region. Please provide my tracking number."),
+                localHelplines = helplineList.ifEmpty { getDefaultHelplines(country, region) },
                 disclaimer = obj.optString("disclaimer", "AI-generated guidance, not licensed legal advice.")
             )
         } catch (e: Exception) {
             getOfflineContingencyPlan(situation, country, region)
+        }
+    }
+
+    private fun getDefaultHelplines(country: String, region: String): List<com.example.data.model.HelplineItem> {
+        val isPakistan = country.contains("Pakistan", ignoreCase = true) || country.isBlank()
+        return if (isPakistan) {
+            listOf(
+                com.example.data.model.HelplineItem("Wafaqi Mohtasib (Federal Ombudsman)", "1055", "Tribunal", "Free lodging of maladministration complaints against any federal department"),
+                com.example.data.model.HelplineItem("BISP Crisis Cash Helpline", "0800-26477", "Social Protection", "Toll-free verification of Benazir Kafalat enrollment"),
+                com.example.data.model.HelplineItem("NADRA Citizen Care", "1777", "Civil Identity", "Direct line for biometric issues, blocked CNICs, and executive center assistance"),
+                com.example.data.model.HelplineItem("Legal Aid Society Pakistan", "0800-70806", "Legal Aid", "Free legal advice for vulnerable citizens and women")
+            )
+        } else {
+            listOf(
+                com.example.data.model.HelplineItem("Public Grievance Redressal Desk", "211", "Public Aid", "Community support & legal advocacy services in $region")
+            )
         }
     }
 
@@ -495,6 +531,7 @@ class CivicSyncApiServiceImpl @Inject constructor(
             actionChecklist = checklist,
             draftLetter = draftLetter,
             advocacyScript = advocacyScript,
+            localHelplines = getDefaultHelplines(country, region),
             disclaimer = "Statutory Notice: This is AI-synthesized guidance, not licensed legal advice. Please consult your local legal aid society or competent public authority."
         )
     }

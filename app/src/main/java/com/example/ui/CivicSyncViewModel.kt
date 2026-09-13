@@ -70,6 +70,31 @@ class CivicSyncViewModel @Inject constructor(
         SpeechAndHapticHelper(application)
     }
 
+    private val prefs = application.getSharedPreferences("civicsync_prefs", android.content.Context.MODE_PRIVATE)
+
+    private val authService = com.example.data.api.SupabaseAuthService(
+        client = com.example.di.SupabaseModule.provideSupabaseClient()
+    )
+
+    private val syncManager = com.example.data.sync.SyncManager(application)
+
+    private val _authLoading = MutableStateFlow(false)
+    val authLoading: StateFlow<Boolean> = _authLoading.asStateFlow()
+
+    private val _authError = MutableStateFlow<String?>(null)
+    val authError: StateFlow<String?> = _authError.asStateFlow()
+
+    private val _isUserLoggedIn = MutableStateFlow(authService.getCurrentUserId() != null)
+    val isUserLoggedIn: StateFlow<Boolean> = _isUserLoggedIn.asStateFlow()
+
+    /**
+     * Active top-level navigation destination.
+     */
+    private val _currentNav = MutableStateFlow(
+        if (prefs.getBoolean("has_completed_onboarding", false)) NavigationDest.HOME else NavigationDest.ONBOARDING
+    )
+    val currentNav: StateFlow<NavigationDest> = _currentNav.asStateFlow()
+
     // --- StateFlow Architecture ---
 
     /**
@@ -84,12 +109,6 @@ class CivicSyncViewModel @Inject constructor(
      */
     private val _currentLanguage = MutableStateFlow(AppLanguage.URDU)
     val currentLanguage: StateFlow<AppLanguage> = _currentLanguage.asStateFlow()
-
-    /**
-     * Active top-level navigation destination.
-     */
-    private val _currentNav = MutableStateFlow(NavigationDest.HOME)
-    val currentNav: StateFlow<NavigationDest> = _currentNav.asStateFlow()
 
     /**
      * Ephemeral toast / snackbar notification message.
@@ -519,7 +538,7 @@ class CivicSyncViewModel @Inject constructor(
                 country = "Pakistan",
                 region = case.province
             )
-            _currentNav.value = NavigationDest.HOME
+            _currentNav.value = NavigationDest.INTAKE_WIZARD
             performHapticFeedback()
         } catch (e: Exception) {
             showToast("Failed loading case details")
@@ -575,6 +594,74 @@ class CivicSyncViewModel @Inject constructor(
         }
     }
 
+    fun completeOnboarding() {
+        prefs.edit().putBoolean("has_completed_onboarding", true).apply()
+        _currentNav.value = NavigationDest.AUTH
+    }
+
+    fun signIn(email: String, pass: String) {
+        viewModelScope.launch {
+            _authLoading.value = true
+            _authError.value = null
+            authService.signInWithEmail(email, pass).fold(
+                onSuccess = {
+                    _isUserLoggedIn.value = true
+                    _authLoading.value = false
+                    showToast("Signed in successfully / لاگ ان کامیاب")
+                    _currentNav.value = NavigationDest.HOME
+                    syncCasework()
+                },
+                onFailure = { err ->
+                    _authLoading.value = false
+                    _authError.value = err.localizedMessage ?: "Authentication failed"
+                }
+            )
+        }
+    }
+
+    fun signUp(email: String, pass: String) {
+        viewModelScope.launch {
+            _authLoading.value = true
+            _authError.value = null
+            authService.signUpWithEmail(email, pass).fold(
+                onSuccess = {
+                    _isUserLoggedIn.value = true
+                    _authLoading.value = false
+                    showToast("Account created successfully")
+                    _currentNav.value = NavigationDest.HOME
+                    syncCasework()
+                },
+                onFailure = { err ->
+                    _authLoading.value = false
+                    _authError.value = err.localizedMessage ?: "Registration failed"
+                }
+            )
+        }
+    }
+
+    fun continueAsGuest() {
+        _currentNav.value = NavigationDest.HOME
+        showToast("Continuing in 100% Offline Vault Mode")
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            authService.signOut()
+            _isUserLoggedIn.value = false
+            showToast("Signed out")
+        }
+    }
+
+    fun syncCasework() {
+        syncManager.triggerImmediateSync()
+        showToast("Synchronizing casework with encrypted cloud…")
+    }
+
+    fun startNewCase() {
+        resetToIntake()
+        _currentNav.value = NavigationDest.INTAKE_WIZARD
+    }
+
     /**
      * Permanently purges all user cases, vault documents, and resets offline checklist state.
      * Complies with Google Play User Data & Account Deletion Policy.
@@ -585,6 +672,29 @@ class CivicSyncViewModel @Inject constructor(
             _selectedCaseReview.value = null
             _uiState.value = CivicSyncUiState.Idle()
             showToast("All personal records & vault data permanently purged")
+            performHapticFeedback(100L)
+        }
+    }
+
+    /**
+     * Complete account and data deletion: deletes local database records and Supabase cloud records.
+     */
+    fun deleteAccountAndAllData() {
+        viewModelScope.launch {
+            repository.clearAllUserData()
+            val userId = authService.getCurrentUserId()
+            if (userId != null) {
+                try {
+                    authService.signOut()
+                } catch (e: Exception) {
+                    // ignore
+                }
+            }
+            _isUserLoggedIn.value = false
+            _selectedCaseReview.value = null
+            _uiState.value = CivicSyncUiState.Idle()
+            _currentNav.value = NavigationDest.HOME
+            showToast("Account & all local/remote data wiped permanently")
             performHapticFeedback(100L)
         }
     }

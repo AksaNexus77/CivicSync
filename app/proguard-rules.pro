@@ -80,6 +80,27 @@
 -dontwarn dagger.hilt.**
 
 # -------------------------------------------------------------
+# Supabase Kotlin SDK & Ktor Client
+# -------------------------------------------------------------
+-keep class io.github.jan.supabase.** { *; }
+-dontwarn io.github.jan.supabase.**
+-keep class io.ktor.** { *; }
+-dontwarn io.ktor.**
+
+# -------------------------------------------------------------
+# SQLCipher for Android Encrypted Database
+# -------------------------------------------------------------
+-keep class net.sqlcipher.** { *; }
+-keep class net.sqlcipher.database.** { *; }
+-dontwarn net.sqlcipher.**
+
+# -------------------------------------------------------------
+# AndroidX WorkManager
+# -------------------------------------------------------------
+-keep class androidx.work.** { *; }
+-dontwarn androidx.work.**
+
+# -------------------------------------------------------------
 # Coroutines & ProfileInstaller
 # -------------------------------------------------------------
 -dontwarn kotlinx.coroutines.**

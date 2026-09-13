@@ -45,6 +45,10 @@ kotlinxSerialization = "1.7.3"
 hilt = "2.51.1"
 coreSplashscreen = "1.0.1"
 profileinstaller = "1.4.1"
+sqlcipher = "4.5.4"
+workManager = "2.9.1"
+supabase = "3.0.3"
+ktor = "3.0.3"
 
 
 [libraries]
@@ -107,6 +111,14 @@ googleid = { group = "com.google.android.libraries.identity.googleid", name = "g
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+sqlcipher-android = { group = "net.zetetic", name = "android-database-sqlcipher", version.ref = "sqlcipher" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
+supabase-bom = { group = "io.github.jan-tennert.supabase", name = "bom", version.ref = "supabase" }
+supabase-postgrest = { group = "io.github.jan-tennert.supabase", name = "postgrest-kt" }
+supabase-auth = { group = "io.github.jan-tennert.supabase", name = "auth-kt" }
+supabase-storage = { group = "io.github.jan-tennert.supabase", name = "storage-kt" }
+supabase-realtime = { group = "io.github.jan-tennert.supabase", name = "realtime-kt" }
+ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 
 
 [plugins]

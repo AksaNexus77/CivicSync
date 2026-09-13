@@ -15,6 +15,7 @@ enum class CaseStatus(val labelEn: String, val labelUr: String) {
 data class SavedCaseEntity(
     @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
+    val userId: String = "",
     val title: String,
     val situation: String,
     val province: String,
@@ -22,5 +23,6 @@ data class SavedCaseEntity(
     val status: String = CaseStatus.PENDING.name,
     val createdAt: Long = System.currentTimeMillis(),
     val actionPlanJson: String,
-    val citizenNotes: String = ""
+    val citizenNotes: String = "",
+    val isSynced: Boolean = false
 )

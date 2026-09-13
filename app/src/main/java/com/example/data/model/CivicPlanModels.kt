@@ -20,12 +20,21 @@ data class ChecklistItem(
 )
 
 @Serializable
+data class HelplineItem(
+    val title: String,
+    val contact: String,
+    val category: String = "Legal Aid & Welfare",
+    val description: String = ""
+)
+
+@Serializable
 data class CivicActionPlan(
     val eligibilitySummary: List<EligibilityItem> = emptyList(),
     val actionChecklist: List<ChecklistItem> = emptyList(),
     val draftLetter: String = "",
     val advocacyScript: String = "",
-    val disclaimer: String = "This is AI-generated guidance, not licensed legal advice."
+    val localHelplines: List<HelplineItem> = emptyList(),
+    val disclaimer: String = "This is AI-generated guidance, not licensed legal advice. Please consult a qualified legal professional or local authority."
 )
 
 data class CaseRecord(

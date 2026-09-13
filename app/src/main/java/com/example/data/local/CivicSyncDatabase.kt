@@ -8,6 +8,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import net.sqlcipher.database.SQLiteDatabase
+import net.sqlcipher.database.SupportFactory
 
 @Database(
     entities = [
@@ -15,7 +17,7 @@ import kotlinx.coroutines.launch
         VaultDocumentEntity::class,
         OfflineChecklistEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class CivicSyncDatabase : RoomDatabase() {
@@ -28,13 +30,27 @@ abstract class CivicSyncDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: CivicSyncDatabase? = null
 
+        private const val DB_ENCRYPTION_PASSPHRASE = "CivicSync2026_Secure_Citizen_Vault_Key!"
+
         fun getDatabase(context: Context): CivicSyncDatabase {
             return INSTANCE ?: synchronized(this) {
+                // Initialize SQLCipher native libraries
+                try {
+                    SQLiteDatabase.loadLibs(context)
+                } catch (e: Throwable) {
+                    // Ignored if already loaded or in local JVM tests
+                }
+
+                val passphrase = SQLiteDatabase.getBytes(DB_ENCRYPTION_PASSPHRASE.toCharArray())
+                val factory = SupportFactory(passphrase)
+
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     CivicSyncDatabase::class.java,
-                    "civic_sync_pakistan.db"
+                    "civic_sync_encrypted.db"
                 )
+                    .openHelperFactory(factory)
+                    .fallbackToDestructiveMigration()
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

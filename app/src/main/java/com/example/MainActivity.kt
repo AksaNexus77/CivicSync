@@ -13,7 +13,9 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.ui.CivicSyncApp
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.Slate900
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     installSplashScreen()

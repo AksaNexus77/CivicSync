@@ -78,12 +78,17 @@ import com.example.ui.components.ActionPlanSkeleton
 import com.example.ui.components.GlassmorphicCard
 import com.example.ui.screens.ActionPlanScreen
 import com.example.ui.screens.ActiveCasesScreen
+import com.example.ui.screens.AuthScreen
 import com.example.ui.screens.DocumentVaultScreen
+import com.example.ui.screens.HomeDashboardScreen
 import com.example.ui.screens.IntakeScreen
 import com.example.ui.screens.OfflineChecklistScreen
+import com.example.ui.screens.OnboardingScreen
 import com.example.ui.screens.PrivacyPolicyScreen
 import com.example.ui.screens.ResourcesScreen
 import com.example.ui.screens.SettingsScreen
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.IconButton
 import com.example.ui.theme.Amber400
 import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Emerald500
@@ -151,9 +156,28 @@ fun CivicSyncApp(
                 .fillMaxSize()
                 .background(backgroundBrush)
         ) {
+            val isFullscreen = currentNav == NavigationDest.ONBOARDING || currentNav == NavigationDest.AUTH
             val isWideScreen = maxWidth >= 760.dp
 
-            if (isWideScreen) {
+            if (isFullscreen) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
+                ) {
+                    MainScreenRouter(
+                        uiState = uiState,
+                        currentNav = currentNav,
+                        language = language,
+                        savedCases = savedCases,
+                        vaultDocs = vaultDocs,
+                        offlineChecklists = offlineChecklists,
+                        isPlayingTts = isPlayingTts,
+                        viewModel = viewModel
+                    )
+                }
+            } else if (isWideScreen) {
                 // Adaptive Tablet / Desktop layout: Side Rail + Content
                 Row(modifier = Modifier.fillMaxSize()) {
                     Sidebar(
@@ -205,6 +229,7 @@ fun CivicSyncApp(
                         MobileTopBar(
                             language = language,
                             onToggleLanguage = { viewModel.toggleLanguage() },
+                            onOpenSettings = { viewModel.navigateTo(NavigationDest.SETTINGS) },
                             modifier = Modifier.statusBarsPadding()
                         )
                     },
@@ -282,8 +307,40 @@ fun MainScreenRouter(
     isPlayingTts: Boolean,
     viewModel: CivicSyncViewModel
 ) {
+    val authLoading by viewModel.authLoading.collectAsStateWithLifecycle()
+    val authError by viewModel.authError.collectAsStateWithLifecycle()
+    val isUserLoggedIn by viewModel.isUserLoggedIn.collectAsStateWithLifecycle()
+
     when (currentNav) {
+        NavigationDest.ONBOARDING -> {
+            OnboardingScreen(
+                onFinishOnboarding = { viewModel.completeOnboarding() }
+            )
+        }
+        NavigationDest.AUTH -> {
+            AuthScreen(
+                isLoading = authLoading,
+                errorMessage = authError,
+                onSignIn = { email, pass -> viewModel.signIn(email, pass) },
+                onSignUp = { email, pass -> viewModel.signUp(email, pass) },
+                onGoogleSignIn = { viewModel.continueAsGuest() },
+                onContinueGuest = { viewModel.continueAsGuest() }
+            )
+        }
         NavigationDest.HOME -> {
+            HomeDashboardScreen(
+                cases = savedCases,
+                vaultCount = vaultDocs.size,
+                offlineGuidesCount = offlineChecklists.size,
+                language = language,
+                onStartNewCase = { viewModel.startNewCase() },
+                onViewCase = { caseEntity -> viewModel.viewSavedCase(caseEntity) },
+                onUpdateStatus = { caseId, status -> viewModel.updateCaseStatus(caseId, status) },
+                onDeleteCase = { caseId -> viewModel.deleteCase(caseId) },
+                onSyncNow = { viewModel.syncCasework() }
+            )
+        }
+        NavigationDest.INTAKE_WIZARD -> {
             AnimatedContent(
                 targetState = uiState,
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
@@ -333,7 +390,10 @@ fun MainScreenRouter(
                             onSpeakScript = { script -> viewModel.speakAdvocacyScript(script) },
                             onStopSpeech = { viewModel.stopSpeech() },
                             onTriggerHaptic = { viewModel.performHapticFeedback() },
-                            onNewIntake = { viewModel.resetToIntake() }
+                            onNewIntake = {
+                                viewModel.resetToIntake()
+                                viewModel.navigateTo(NavigationDest.HOME)
+                            }
                         )
                     }
                     is CivicSyncUiState.Error -> {
@@ -356,8 +416,7 @@ fun MainScreenRouter(
                 onUpdateStatus = { caseId, status -> viewModel.updateCaseStatus(caseId, status) },
                 onDeleteCase = { caseId -> viewModel.deleteCase(caseId) },
                 onNewCase = {
-                    viewModel.resetToIntake()
-                    viewModel.navigateTo(NavigationDest.HOME)
+                    viewModel.startNewCase()
                 }
             )
         }
@@ -389,12 +448,16 @@ fun MainScreenRouter(
         NavigationDest.SETTINGS -> {
             SettingsScreen(
                 onOpenPrivacyPolicy = { viewModel.navigateTo(NavigationDest.PRIVACY_POLICY) },
-                onClearAllData = { viewModel.clearAllUserData() }
+                onClearAllData = { viewModel.deleteAccountAndAllData() },
+                isUserLoggedIn = isUserLoggedIn,
+                onSignInClick = { viewModel.navigateTo(NavigationDest.AUTH) },
+                onSignOutClick = { viewModel.signOut() }
             )
         }
         NavigationDest.PRIVACY_POLICY -> {
             PrivacyPolicyScreen(
-                onBack = { viewModel.navigateTo(NavigationDest.SETTINGS) }
+                onBack = { viewModel.navigateTo(NavigationDest.SETTINGS) },
+                onDeleteAllData = { viewModel.deleteAccountAndAllData() }
             )
         }
     }
@@ -536,6 +599,7 @@ fun ErrorRecoveryScreen(
 fun MobileTopBar(
     language: AppLanguage,
     onToggleLanguage: () -> Unit,
+    onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -576,26 +640,42 @@ fun MobileTopBar(
             }
         }
 
-        // Language Switcher Badge Button
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(20.dp))
-                .background(Color(0xFF1E293B))
-                .border(1.dp, Emerald400.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
-                .clickable { onToggleLanguage() }
-                .padding(horizontal = 14.dp, vertical = 8.dp)
-                .testTag("language_toggle_button")
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Language Switcher Badge Button
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFF1E293B))
+                    .border(1.dp, Emerald400.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
+                    .clickable { onToggleLanguage() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .testTag("language_toggle_button")
+            ) {
                 Text(
                     text = when (language) {
-                        AppLanguage.URDU -> "اردو (Urdu)"
-                        AppLanguage.ENGLISH -> "English"
-                        AppLanguage.ARABIC -> "العربية (Arabic)"
+                        AppLanguage.URDU -> "اردو"
+                        AppLanguage.ENGLISH -> "EN"
+                        AppLanguage.ARABIC -> "العربية"
                     },
                     color = Emerald400,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier
+                    .size(36.dp)
+                    .testTag("mobile_top_settings_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    tint = Slate400,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

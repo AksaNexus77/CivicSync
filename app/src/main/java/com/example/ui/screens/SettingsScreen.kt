@@ -61,6 +61,9 @@ import com.example.ui.theme.Slate900
 fun SettingsScreen(
     onOpenPrivacyPolicy: () -> Unit = {},
     onClearAllData: () -> Unit = {},
+    isUserLoggedIn: Boolean = false,
+    onSignInClick: () -> Unit = {},
+    onSignOutClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showClearDataDialog by remember { mutableStateOf(false) }
@@ -141,6 +144,86 @@ fun SettingsScreen(
                     fontSize = 12.sp,
                     color = Slate400
                 )
+            }
+        }
+
+        // Citizen Account & Cloud Sync Status
+        item {
+            GlassmorphicCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("settings_account_card"),
+                backgroundColor = if (isUserLoggedIn) Emerald400.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.04f),
+                borderColor = if (isUserLoggedIn) Emerald400.copy(alpha = 0.3f) else Slate700.copy(alpha = 0.5f)
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Shield,
+                                contentDescription = null,
+                                tint = if (isUserLoggedIn) Emerald400 else Slate400,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Citizen Account",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Slate100
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (isUserLoggedIn) Emerald400.copy(alpha = 0.15f) else Slate700.copy(alpha = 0.3f))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = if (isUserLoggedIn) "Supabase Synced" else "Offline Vault Mode",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isUserLoggedIn) Emerald400 else Slate400
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = if (isUserLoggedIn)
+                            "Your account is authenticated with Supabase. All encrypted cases and vault documents are backed up to your private cloud partition."
+                        else
+                            "You are currently operating in 100% offline local mode. Sign in to enable secure multi-device synchronization.",
+                        fontSize = 12.sp,
+                        color = Slate300,
+                        lineHeight = 18.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (isUserLoggedIn) {
+                        OutlinedButton(
+                            onClick = onSignOutClick,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Sign Out", color = Slate300, fontSize = 13.sp)
+                        }
+                    } else {
+                        Button(
+                            onClick = onSignInClick,
+                            colors = ButtonDefaults.buttonColors(containerColor = Emerald400),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Sign In or Register", color = Slate900, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
+                    }
+                }
             }
         }
 

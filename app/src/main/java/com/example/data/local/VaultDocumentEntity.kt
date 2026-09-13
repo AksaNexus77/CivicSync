@@ -21,11 +21,16 @@ enum class VaultDocType(val labelEn: String, val labelUr: String) {
 data class VaultDocumentEntity(
     @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
+    val userId: String = "",
+    val caseId: String? = null,
     val title: String,
     val docType: String,
     val uriString: String? = null,
+    val remoteUrl: String? = null,
+    val mimeType: String = "image/jpeg",
     val description: String = "",
-    val uploadedAt: Long = System.currentTimeMillis()
+    val uploadedAt: Long = System.currentTimeMillis(),
+    val isSynced: Boolean = false
 )
 
 @Entity(tableName = "offline_checklists")

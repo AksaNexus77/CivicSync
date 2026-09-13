@@ -2,11 +2,13 @@ package com.example
 
 import android.app.Application
 import android.util.Log
+import dagger.hilt.android.HiltAndroidApp
 
 /**
- * Enterprise Application class initializing global exception safety,
- * memory hygiene, and production crash telemetry logging.
+ * Enterprise Application class initializing Hilt dependency injection,
+ * global exception safety, memory hygiene, and production crash telemetry logging.
  */
+@HiltAndroidApp
 class CivicSyncApplication : Application() {
 
     override fun onCreate() {
@@ -17,13 +19,12 @@ class CivicSyncApplication : Application() {
     private fun setupGlobalCrashHandler() {
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            // In production release builds, log high-priority diagnostic payload
-            // before forwarding to system default or Firebase Crashlytics
             Log.e(
                 "CivicSyncGlobal",
-                "FATAL UNCAUGHT EXCEPTION in thread [${thread.name}]: ${throwable.localizedMessage}",
+                "CRASH RECOVERY: Fatal uncaught exception in thread [${thread.name}]: ${throwable.localizedMessage}",
                 throwable
             )
+            // Forward gracefully to system default handler
             defaultHandler?.uncaughtException(thread, throwable)
         }
     }

@@ -29,6 +29,12 @@ interface SavedCaseDao {
 
     @Query("DELETE FROM saved_cases")
     suspend fun deleteAllCases()
+
+    @Query("SELECT * FROM saved_cases WHERE isSynced = 0")
+    suspend fun getUnsyncedCases(): List<SavedCaseEntity>
+
+    @Query("UPDATE saved_cases SET isSynced = 1 WHERE id = :caseId")
+    suspend fun markCaseSynced(caseId: String)
 }
 
 @Dao
@@ -44,6 +50,12 @@ interface VaultDocumentDao {
 
     @Query("DELETE FROM vault_documents")
     suspend fun deleteAllDocuments()
+
+    @Query("SELECT * FROM vault_documents WHERE isSynced = 0")
+    suspend fun getUnsyncedDocuments(): List<VaultDocumentEntity>
+
+    @Query("UPDATE vault_documents SET isSynced = 1, remoteUrl = :remoteUrl WHERE id = :docId")
+    suspend fun markDocumentSynced(docId: String, remoteUrl: String)
 }
 
 @Dao

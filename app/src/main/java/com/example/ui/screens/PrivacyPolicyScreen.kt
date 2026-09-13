@@ -29,6 +29,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,8 +62,11 @@ import com.example.ui.theme.Slate800
 @Composable
 fun PrivacyPolicyScreen(
     onBack: () -> Unit,
+    onDeleteAllData: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var showConfirmDeleteDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -133,7 +140,7 @@ fun PrivacyPolicyScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "CivicSync Global operates under strict data minimization guidelines. We never sell your personal information, deploy advertising trackers, or store private hardship documents on remote servers. All casework lives on your device.",
+                        text = "CivicSync Global operates under strict data minimization guidelines. We never sell your personal information, deploy advertising trackers, or share confidential hardship records. All casework is saved first into an encrypted, sandboxed local Room vault with optional user-controlled Supabase cloud synchronization.",
                         fontSize = 12.sp,
                         color = Slate300,
                         lineHeight = 18.sp
@@ -175,19 +182,19 @@ fun PrivacyPolicyScreen(
                 content = "To draft customized representation letters and statutory analyses, case narratives are transmitted securely to the Google Gemini API over Transport Layer Security (TLS 1.3).\n\n" +
                         "• Ephemeral Transit: Case prompts are processed in real-time and immediately returned.\n" +
                         "• No Foundation Model Training: Data submitted through the enterprise API is not utilized to train or fine-tune public Gemini foundation models.\n" +
-                        "• Autonomous Contingency Engine: In zero-connectivity or offline conditions, the app utilizes deterministic on-device statutory fallback plans without external network calls."
+                        "• Autonomous Contingency Engine: In zero-connectivity conditions, the app utilizes deterministic on-device statutory fallback plans without external network calls."
             )
         }
 
-        // Section 4: On-Device Room Database & Encryption
+        // Section 4: On-Device Room Database & SQLCipher Encryption
         item(key = "local_storage") {
             PolicySectionCard(
                 icon = Icons.Default.Lock,
                 iconTint = Emerald400,
-                title = "4. Local-Only Encrypted Storage",
-                content = "All saved cases, active grievances, and Document Vault attachments are stored directly in your device's sandboxed Room SQLite database.\n\n" +
-                        "• No Remote Cloud Database: Your documents do not synchronize to any third-party cloud servers.\n" +
-                        "• Sandboxed Isolation: Protected by Android operating system internal app sandboxing, preventing other installed applications from accessing your case files."
+                title = "4. Encrypted Local Storage (SQLCipher)",
+                content = "All saved cases, active grievances, and Document Vault attachments are encrypted directly on your device using 256-bit AES SQLCipher Room database encryption.\n\n" +
+                        "• Optional Supabase Sync: If you sign in, your cases synchronize to a private Supabase partition protected by Row-Level Security (RLS) where only your UID has read/write privileges.\n" +
+                        "• Sandboxed Isolation: Protected by Android operating system internal app sandboxing."
             )
         }
 
@@ -196,25 +203,87 @@ fun PrivacyPolicyScreen(
             PolicySectionCard(
                 icon = Icons.Default.Shield,
                 iconTint = Slate100,
-                title = "5. Device Permissions & Least-Privilege",
-                content = "CivicSync requests only the minimum permissions necessary for core functionality:\n" +
-                        "• INTERNET: Communicating with the Gemini API for legal synthesis.\n" +
-                        "• VIBRATE (Normal): Providing tactile haptic confirmation when toggling checklist milestones.\n" +
-                        "• RECORD_AUDIO (Runtime): Used exclusively when the user chooses to dictate their grievance via microphone. Audio streams are transcribed immediately and never recorded or uploaded.\n" +
-                        "• Document Vault (Zero-Permission): Uses the Android Photo Picker / Storage Access Framework, guaranteeing zero broad storage access to your device files."
+                title = "5. Device Permissions & Least-Privilege Compliance",
+                content = "CivicSync requests strictly two permissions:\n" +
+                        "• INTERNET: Communicating with the Gemini API and secure Supabase synchronization.\n" +
+                        "• CAMERA (Runtime): Used solely when you take a photo of a physical receipt or certificate for your personal encrypted Document Vault.\n" +
+                        "• Document Vault (Zero-Permission): Uses the Android Photo Picker / System Storage Framework, requiring zero broad storage permissions."
             )
         }
 
         // Section 6: User Data Deletion & Google Play Compliance
         item(key = "data_deletion") {
-            PolicySectionCard(
-                icon = Icons.Default.DeleteForever,
-                iconTint = Rose400,
-                title = "6. User Data Deletion Rights (Play Policy)",
-                content = "Under Google Play's User Data policy and global privacy laws (GDPR/CCPA), citizens have complete sovereignty over their data.\n\n" +
-                        "• Instant Permanent Deletion: You can permanently erase all saved cases, vault records, and procedural history at any time using the 'Clear All My Data' button in Settings.\n" +
-                        "• No Account Mandate: CivicSync requires no account creation, passwords, or personal email registration to operate."
-            )
+            GlassmorphicCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("privacy_deletion_card"),
+                backgroundColor = Rose400.copy(alpha = 0.08f),
+                borderColor = Rose400.copy(alpha = 0.3f)
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Rose400.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DeleteForever,
+                                contentDescription = null,
+                                tint = Rose400,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Text(
+                            text = "6. User Data Deletion Rights (Play Policy)",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Slate100
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "Under Google Play's User Data policy and global privacy laws (GDPR/CCPA), citizens have complete sovereignty over their data. You can permanently erase all local encrypted Room records and Supabase cloud records at any time.",
+                        fontSize = 12.sp,
+                        color = Slate300,
+                        lineHeight = 19.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    androidx.compose.material3.Button(
+                        onClick = { showConfirmDeleteDialog = true },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = Rose400
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("delete_account_and_data_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteForever,
+                            contentDescription = null,
+                            tint = Slate100,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Delete My Account & Data",
+                            fontWeight = FontWeight.Bold,
+                            color = Slate100,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            }
         }
 
         // Footer version info
@@ -237,6 +306,47 @@ fun PrivacyPolicyScreen(
                 )
             }
         }
+    }
+
+    if (showConfirmDeleteDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showConfirmDeleteDialog = false },
+            title = {
+                Text(
+                    text = "Delete All Account & Local Data?",
+                    fontWeight = FontWeight.Bold,
+                    color = Slate100
+                )
+            },
+            text = {
+                Text(
+                    text = "This will permanently purge all saved cases, vault documents, and delete all remote Supabase sync records associated with this citizen profile. This action cannot be undone.",
+                    color = Slate300,
+                    fontSize = 13.sp
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.Button(
+                    onClick = {
+                        showConfirmDeleteDialog = false
+                        onDeleteAllData()
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = Rose400
+                    )
+                ) {
+                    Text("Permanently Delete", color = Slate100, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { showConfirmDeleteDialog = false }
+                ) {
+                    Text("Cancel", color = Slate400)
+                }
+            },
+            containerColor = Slate800
+        )
     }
 }
 
