@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.animation.core.*
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.OfflinePin
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Badge
 import androidx.compose.material3.DropdownMenu
@@ -43,6 +45,8 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -454,6 +459,19 @@ private fun DashboardEmptyState(
     onStartNewCase: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showExamples by remember { mutableStateOf(false) }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "pulseTransition")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.95f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -464,13 +482,14 @@ private fun DashboardEmptyState(
         Box(
             modifier = Modifier
                 .size(64.dp)
+                .scale(pulseScale)
                 .clip(CircleShape)
                 .background(Emerald400.copy(alpha = 0.12f))
                 .border(1.5.dp, Emerald400.copy(alpha = 0.3f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Default.FolderOpen,
+                imageVector = Icons.Default.Security,
                 contentDescription = null,
                 tint = Emerald400,
                 modifier = Modifier.size(32.dp)
@@ -480,20 +499,61 @@ private fun DashboardEmptyState(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "No Active Cases Yet",
-            fontSize = 17.sp,
-            fontWeight = FontWeight.Bold,
-            color = Slate100
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Text(
-            text = "Submit a citizen hardship narrative or benefit denial to generate an AI-powered legal action plan.",
-            fontSize = 13.sp,
-            color = Slate400,
+            text = "No cases yet. Start by describing your situation — we'll build your action plan together.",
+            fontSize = 14.sp,
+            color = Slate300,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            lineHeight = 18.sp
+            lineHeight = 20.sp
         )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        OutlinedButton(
+            onClick = { showExamples = !showExamples },
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Slate300),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Text(if (showExamples) "Hide Examples" else "See Example Cases")
+        }
+
+        AnimatedVisibility(visible = showExamples) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ExampleCaseCard(
+                    title = "Healthcare Denial",
+                    description = "My Sehat Insaf card was rejected for an emergency procedure."
+                )
+                ExampleCaseCard(
+                    title = "Eviction Notice",
+                    description = "Received a 3-day notice without prior warning or due process."
+                )
+                ExampleCaseCard(
+                    title = "Identity Verification Block",
+                    description = "BISP payments stopped due to biometric mismatch at the center."
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExampleCaseCard(title: String, description: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Slate800.copy(alpha = 0.6f))
+            .border(1.dp, Slate700, RoundedCornerShape(12.dp))
+            .padding(14.dp)
+    ) {
+        Column {
+            Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Slate100)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(description, fontSize = 12.sp, color = Slate400, lineHeight = 16.sp)
+        }
     }
 }
