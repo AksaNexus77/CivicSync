@@ -3,9 +3,9 @@ package com.example.ui.screens
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -20,25 +20,28 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -50,32 +53,37 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.components.GlassmorphicCard
 import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Emerald500
-import com.example.ui.theme.Indigo400
 import com.example.ui.theme.Indigo950
 import com.example.ui.theme.Slate100
 import com.example.ui.theme.Slate400
-import com.example.ui.theme.Slate500
 import com.example.ui.theme.Slate700
 import com.example.ui.theme.Slate900
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ProcessingScreen(
-    currentMessageIndex: Int,
-    messages: List<String>,
     modifier: Modifier = Modifier
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "processing_spin")
+    val messages = remember {
+        listOf(
+            "Reading your situation...",
+            "Checking Pakistani welfare laws...",
+            "Drafting your legal letter...",
+            "Preparing your advocacy script..."
+        )
+    }
 
-    val rotationAngle by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2400, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "rotationAngle"
-    )
+    var currentMessageIndex by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        while (currentMessageIndex < messages.size - 1) {
+            delay(3000L)
+            currentMessageIndex++
+        }
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "processing_spin")
 
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 0.95f,
@@ -87,9 +95,15 @@ fun ProcessingScreen(
         label = "pulseScale"
     )
 
-    val activeMessage = messages.getOrElse(currentMessageIndex % messages.size) {
-        "Compiling your action plan..."
-    }
+    val activeMessage = messages[currentMessageIndex]
+
+    // Calculate progress (0.0 to 1.0)
+    val targetProgress = (currentMessageIndex + 1).toFloat() / messages.size.toFloat()
+    val animatedProgress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = tween(durationMillis = 3000, easing = FastOutSlowInEasing),
+        label = "progress_bar_anim"
+    )
 
     Box(
         modifier = modifier
@@ -108,7 +122,7 @@ fun ProcessingScreen(
     ) {
         GlassmorphicCard(
             modifier = Modifier
-                .width(360.dp)
+                .fillMaxWidth()
                 .padding(16.dp),
             backgroundColor = Color.White.copy(alpha = 0.05f)
         ) {
@@ -118,42 +132,26 @@ fun ProcessingScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Outer rotating ring + central pulsing icon
+                // Central pulsing icon (spinner removed)
                 Box(
-                    modifier = Modifier.size(110.dp),
+                    modifier = Modifier
+                        .size(80.dp)
+                        .scale(pulseScale)
+                        .clip(CircleShape)
+                        .background(Emerald500.copy(alpha = 0.15f))
+                        .border(1.5.dp, Emerald400.copy(alpha = 0.6f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Spinning gradient ring
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .rotate(rotationAngle),
-                        strokeWidth = 3.dp,
-                        color = Emerald400,
-                        trackColor = Slate700.copy(alpha = 0.3f)
+                    Icon(
+                        imageVector = when (currentMessageIndex % 3) {
+                            0 -> Icons.Default.Policy
+                            1 -> Icons.Default.Gavel
+                            else -> Icons.Default.Shield
+                        },
+                        contentDescription = "Caseworker in progress",
+                        tint = Emerald400,
+                        modifier = Modifier.size(36.dp)
                     )
-
-                    // Central glowing shield
-                    Box(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .scale(pulseScale)
-                            .clip(CircleShape)
-                            .background(Emerald500.copy(alpha = 0.15f))
-                            .border(1.5.dp, Emerald400.copy(alpha = 0.6f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = when (currentMessageIndex % 3) {
-                                0 -> Icons.Default.Policy
-                                1 -> Icons.Default.Gavel
-                                else -> Icons.Default.Shield
-                            },
-                            contentDescription = "Caseworker in progress",
-                            tint = Emerald400,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(28.dp))
@@ -166,13 +164,13 @@ fun ProcessingScreen(
                     color = Emerald400
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Smooth micro-copy transition
                 AnimatedContent(
                     targetState = activeMessage,
                     transitionSpec = {
-                        fadeIn(tween(350)) togetherWith fadeOut(tween(350))
+                        fadeIn(tween(500)) togetherWith fadeOut(tween(500))
                     },
                     label = "loading_text_switch"
                 ) { targetText ->
@@ -186,25 +184,28 @@ fun ProcessingScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                Text(
-                    text = "Evaluating statutory guidelines, welfare entitlement rules, and municipal defense precedent.",
-                    fontSize = 12.sp,
-                    color = Slate400,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 18.sp
+                // Subtle Progress Bar
+                LinearProgressIndicator(
+                    progress = { animatedProgress },
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                    color = Emerald400,
+                    trackColor = Slate700.copy(alpha = 0.5f)
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Step progress indicators
+                // Step progress dots
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     messages.indices.forEach { index ->
-                        val isCurrent = (currentMessageIndex % messages.size) == index
+                        val isCurrent = currentMessageIndex == index
                         Box(
                             modifier = Modifier
                                 .size(if (isCurrent) 20.dp else 8.dp, 8.dp)
