@@ -1,11 +1,13 @@
 package com.example
 
+import android.app.Application
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.api.GeminiCaseworkerService
 import com.example.ui.CivicSyncViewModel
 import com.example.ui.PlanTab
 import com.example.ui.WizardStep
+import com.example.util.AppLanguage
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -23,7 +25,7 @@ class ExampleRobolectricTest {
   fun `read string from context`() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     val appName = context.getString(R.string.app_name)
-    assertEquals("CivicSync AI", appName)
+    assertEquals("CivicSync Pakistan", appName)
   }
 
   @Test
@@ -69,10 +71,16 @@ class ExampleRobolectricTest {
   }
 
   @Test
-  fun `test viewmodel state transitions and defaults`() {
-    val vm = CivicSyncViewModel()
+  fun `test viewmodel state transitions and bilingual toggle`() {
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    val vm = CivicSyncViewModel(app)
     assertEquals(WizardStep.INTAKE, vm.uiState.value.currentStep)
     assertEquals("Punjab", vm.uiState.value.locationText)
+    assertEquals(AppLanguage.URDU, vm.uiState.value.language)
+
+    // Test bilingual toggle
+    vm.toggleLanguage()
+    assertEquals(AppLanguage.ENGLISH, vm.uiState.value.language)
 
     vm.onSituationChanged("BISP biometric failure report")
     assertEquals("BISP biometric failure report", vm.uiState.value.situationText)

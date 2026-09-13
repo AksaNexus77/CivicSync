@@ -31,4 +31,5 @@ val Rose500 = Color(0xFFEF4444)
 val Indigo400 = Color(0xFF818CF8)
 val Indigo500 = Color(0xFF6366F1)
 val Sky400 = Color(0xFF38BDF8)
+val Purple400 = Color(0xFFA78BFA)
 

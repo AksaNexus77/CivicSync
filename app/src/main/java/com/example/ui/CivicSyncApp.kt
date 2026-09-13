@@ -28,14 +28,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.HelpCenter
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.OfflinePin
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.OfflinePin
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -43,6 +47,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -51,43 +56,50 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.data.local.SavedCaseEntity
 import com.example.ui.screens.ActionPlanScreen
 import com.example.ui.screens.ActiveCasesScreen
+import com.example.ui.screens.DocumentVaultScreen
 import com.example.ui.screens.IntakeScreen
+import com.example.ui.screens.OfflineChecklistScreen
 import com.example.ui.screens.ProcessingScreen
 import com.example.ui.screens.ResourcesScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.Indigo400
-import com.example.ui.theme.Indigo900
 import com.example.ui.theme.Indigo950
 import com.example.ui.theme.Slate100
 import com.example.ui.theme.Slate300
 import com.example.ui.theme.Slate400
 import com.example.ui.theme.Slate500
-import com.example.ui.theme.Slate600
 import com.example.ui.theme.Slate700
 import com.example.ui.theme.Slate800
 import com.example.ui.theme.Slate900
+import com.example.util.AppLanguage
+import com.example.util.Strings
 
 data class NavItem(
     val dest: NavigationDest,
-    val title: String,
+    val titleEn: String,
+    val titleUr: String,
     val activeIcon: ImageVector,
     val inactiveIcon: ImageVector
 )
 
 val navigationItems = listOf(
-    NavItem(NavigationDest.HOME, "Home", Icons.Filled.Home, Icons.Outlined.Home),
-    NavItem(NavigationDest.ACTIVE_CASES, "Active Cases", Icons.Filled.Folder, Icons.Outlined.Folder),
-    NavItem(NavigationDest.RESOURCES, "Resources", Icons.AutoMirrored.Filled.MenuBook, Icons.AutoMirrored.Outlined.MenuBook),
-    NavItem(NavigationDest.SETTINGS, "Settings", Icons.Filled.Settings, Icons.Outlined.Settings)
+    NavItem(NavigationDest.HOME, "Home", "ہوم", Icons.Filled.Home, Icons.Outlined.Home),
+    NavItem(NavigationDest.ACTIVE_CASES, "Cases", "کیسز", Icons.Filled.Folder, Icons.Outlined.Folder),
+    NavItem(NavigationDest.DOCUMENT_VAULT, "Vault", "والٹ", Icons.Filled.Lock, Icons.Outlined.Lock),
+    NavItem(NavigationDest.OFFLINE_GUIDES, "Guides", "گائیڈز", Icons.Filled.OfflinePin, Icons.Outlined.OfflinePin),
+    NavItem(NavigationDest.RESOURCES, "Helplines", "ہیلپ لائن", Icons.AutoMirrored.Filled.MenuBook, Icons.AutoMirrored.Outlined.MenuBook)
 )
 
 @Composable
@@ -96,80 +108,109 @@ fun CivicSyncApp(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val savedCases by viewModel.savedCases.collectAsState()
+    val vaultDocs by viewModel.vaultDocuments.collectAsState()
+    val offlineChecklists by viewModel.offlineChecklists.collectAsState()
+    val isPlayingTts by viewModel.isPlayingTts.collectAsState()
 
-    // Background: Deep Slate (slate-900) and Indigo (indigo-950) gradient
-    val backgroundBrush = Brush.linearGradient(
-        colors = listOf(
-            Slate900,
-            Indigo950,
-            Color(0xFF070B14)
+    // Right-To-Left layout support for Urdu (PHASE 1 Mandate)
+    val layoutDirection = if (uiState.language == AppLanguage.URDU) LayoutDirection.Rtl else LayoutDirection.Ltr
+
+    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+        val backgroundBrush = Brush.linearGradient(
+            colors = listOf(
+                Slate900,
+                Indigo950,
+                Color(0xFF070B14)
+            )
         )
-    )
 
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .background(backgroundBrush)
-    ) {
-        val isWideScreen = maxWidth >= 700.dp
+        BoxWithConstraints(
+            modifier = modifier
+                .fillMaxSize()
+                .background(backgroundBrush)
+        ) {
+            val isWideScreen = maxWidth >= 760.dp
 
-        if (isWideScreen) {
-            // Tablet / Desktop layout: Fixed Left Sidebar (w-64 equivalent: 240dp) + Main Container
-            Row(modifier = Modifier.fillMaxSize()) {
-                Sidebar(
-                    currentNav = uiState.currentNav,
-                    onSelectNav = { viewModel.selectNav(it) },
-                    casesCount = uiState.activeCases.size,
-                    modifier = Modifier
-                        .width(240.dp)
-                        .fillMaxHeight()
-                        .statusBarsPadding()
-                        .navigationBarsPadding()
-                )
+            if (isWideScreen) {
+                // Tablet / Desktop layout: Fixed Left Sidebar + Main Container
+                Row(modifier = Modifier.fillMaxSize()) {
+                    Sidebar(
+                        currentNav = uiState.currentNav,
+                        language = uiState.language,
+                        casesCount = savedCases.size,
+                        vaultCount = vaultDocs.size,
+                        onSelectNav = { viewModel.selectNav(it) },
+                        onToggleLanguage = { viewModel.toggleLanguage() },
+                        modifier = Modifier
+                            .width(260.dp)
+                            .fillMaxHeight()
+                            .statusBarsPadding()
+                            .navigationBarsPadding()
+                    )
 
-                // Main Content Area with max-width container
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .statusBarsPadding()
-                        .navigationBarsPadding(),
-                    contentAlignment = Alignment.TopCenter
-                ) {
+                    // Main Content Area with max-width container
                     Box(
                         modifier = Modifier
+                            .weight(1f)
                             .fillMaxHeight()
-                            .widthIn(max = 840.dp)
+                            .statusBarsPadding()
+                            .navigationBarsPadding(),
+                        contentAlignment = Alignment.TopCenter
                     ) {
-                        MainScreenRouter(uiState = uiState, viewModel = viewModel)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .widthIn(max = 900.dp)
+                        ) {
+                            MainScreenRouter(
+                                uiState = uiState,
+                                savedCases = savedCases,
+                                vaultDocs = vaultDocs,
+                                offlineChecklists = offlineChecklists,
+                                isPlayingTts = isPlayingTts,
+                                viewModel = viewModel
+                            )
+                        }
                     }
                 }
-            }
-        } else {
-            // Mobile Compact layout: Top App Bar + Content + Bottom Navigation Bar
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                containerColor = Color.Transparent,
-                topBar = {
-                    MobileTopBar(
-                        currentNav = uiState.currentNav,
-                        modifier = Modifier.statusBarsPadding()
-                    )
-                },
-                bottomBar = {
-                    MobileBottomBar(
-                        currentNav = uiState.currentNav,
-                        onSelectNav = { viewModel.selectNav(it) },
-                        modifier = Modifier.navigationBarsPadding()
-                    )
-                }
-            ) { innerPadding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                ) {
-                    MainScreenRouter(uiState = uiState, viewModel = viewModel)
+            } else {
+                // Mobile Compact layout: Top App Bar with Bilingual Toggle + Content + Bottom Nav
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    containerColor = Color.Transparent,
+                    topBar = {
+                        MobileTopBar(
+                            language = uiState.language,
+                            onToggleLanguage = { viewModel.toggleLanguage() },
+                            modifier = Modifier.statusBarsPadding()
+                        )
+                    },
+                    bottomBar = {
+                        MobileBottomBar(
+                            currentNav = uiState.currentNav,
+                            language = uiState.language,
+                            casesCount = savedCases.size,
+                            vaultCount = vaultDocs.size,
+                            onSelectNav = { viewModel.selectNav(it) },
+                            modifier = Modifier.navigationBarsPadding()
+                        )
+                    }
+                ) { innerPadding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    ) {
+                        MainScreenRouter(
+                            uiState = uiState,
+                            savedCases = savedCases,
+                            vaultDocs = vaultDocs,
+                            offlineChecklists = offlineChecklists,
+                            isPlayingTts = isPlayingTts,
+                            viewModel = viewModel
+                        )
+                    }
                 }
             }
         }
@@ -179,6 +220,10 @@ fun CivicSyncApp(
 @Composable
 fun MainScreenRouter(
     uiState: CivicSyncUiState,
+    savedCases: List<SavedCaseEntity>,
+    vaultDocs: List<com.example.data.local.VaultDocumentEntity>,
+    offlineChecklists: List<com.example.data.local.OfflineChecklistEntity>,
+    isPlayingTts: Boolean,
     viewModel: CivicSyncViewModel
 ) {
     when (uiState.currentNav) {
@@ -196,8 +241,17 @@ fun MainScreenRouter(
                         activeTab = uiState.activeTab,
                         urgencyLevel = uiState.urgencyLevel,
                         locationText = uiState.locationText,
+                        language = uiState.language,
+                        isPlayingTts = isPlayingTts,
                         onTabSelected = { viewModel.selectTab(it) },
                         onToggleChecklist = { viewModel.toggleChecklistItem(it) },
+                        onSaveCase = { title, notes ->
+                            viewModel.saveCurrentPlanAsCase(title, notes)
+                            viewModel.selectNav(NavigationDest.ACTIVE_CASES)
+                        },
+                        onSpeakScript = { script -> viewModel.speakAdvocacyScript(script) },
+                        onStopSpeech = { viewModel.stopSpeech() },
+                        onTriggerHaptic = { viewModel.performHapticFeedback() },
                         onNewIntake = { viewModel.resetToIntake() }
                     )
                 }
@@ -207,10 +261,14 @@ fun MainScreenRouter(
                         urgencyLevel = uiState.urgencyLevel,
                         locationText = uiState.locationText,
                         errorMessage = uiState.errorMessage,
+                        language = uiState.language,
+                        vaultDocCount = vaultDocs.size,
                         onSituationChanged = { viewModel.onSituationChanged(it) },
+                        onSpeechRecognized = { viewModel.onSpeechRecognized(it) },
                         onUrgencyChanged = { viewModel.onUrgencyChanged(it) },
                         onLocationChanged = { viewModel.onLocationChanged(it) },
                         onPresetSelected = { sit, urg, loc -> viewModel.populatePreset(sit, urg, loc) },
+                        onNavigateToVault = { viewModel.selectNav(NavigationDest.DOCUMENT_VAULT) },
                         onGenerateClicked = { viewModel.generateActionPlan() }
                     )
                 }
@@ -218,17 +276,41 @@ fun MainScreenRouter(
         }
         NavigationDest.ACTIVE_CASES -> {
             ActiveCasesScreen(
-                cases = uiState.activeCases,
-                onSelectCase = { viewModel.loadCase(it) },
-                onDeleteCase = { viewModel.deleteCase(it) },
+                cases = savedCases,
+                language = uiState.language,
+                onViewCase = { caseEntity -> viewModel.loadSavedCase(caseEntity) },
+                onUpdateStatus = { caseId, status -> viewModel.updateCaseStatus(caseId, status) },
+                onDeleteCase = { caseId -> viewModel.deleteCase(caseId) },
                 onNewCase = {
                     viewModel.resetToIntake()
                     viewModel.selectNav(NavigationDest.HOME)
                 }
             )
         }
+        NavigationDest.DOCUMENT_VAULT -> {
+            DocumentVaultScreen(
+                documents = vaultDocs,
+                language = uiState.language,
+                onAddDocument = { title, type, uri, desc ->
+                    viewModel.addVaultDocument(title, type, uri, desc)
+                },
+                onDeleteDocument = { id -> viewModel.deleteVaultDocument(id) }
+            )
+        }
+        NavigationDest.OFFLINE_GUIDES -> {
+            OfflineChecklistScreen(
+                checklists = offlineChecklists,
+                language = uiState.language,
+                onToggleChecklist = { id, completed ->
+                    viewModel.toggleOfflineChecklist(id, completed)
+                }
+            )
+        }
         NavigationDest.RESOURCES -> {
-            ResourcesScreen(resources = uiState.resources)
+            ResourcesScreen(
+                resources = uiState.resources,
+                language = uiState.language
+            )
         }
         NavigationDest.SETTINGS -> {
             SettingsScreen()
@@ -239,13 +321,16 @@ fun MainScreenRouter(
 @Composable
 fun Sidebar(
     currentNav: NavigationDest,
-    onSelectNav: (NavigationDest) -> Unit,
+    language: AppLanguage,
     casesCount: Int,
+    vaultCount: Int,
+    onSelectNav: (NavigationDest) -> Unit,
+    onToggleLanguage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
-            .background(Slate900.copy(alpha = 0.85f))
+            .background(Slate900.copy(alpha = 0.9f))
             .border(
                 width = 1.dp,
                 color = Slate800,
@@ -257,11 +342,11 @@ fun Sidebar(
         // App Logo & Title
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 28.dp)
+            modifier = Modifier.padding(bottom = 24.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(42.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(
                         brush = Brush.linearGradient(
@@ -274,51 +359,96 @@ fun Sidebar(
                     imageVector = Icons.Default.Security,
                     contentDescription = "CivicSync Logo",
                     tint = Slate900,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
-                    text = "CivicSync AI",
-                    fontSize = 18.sp,
+                    text = Strings.get("app_title", language),
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Slate100,
-                    letterSpacing = (-0.5).sp
+                    letterSpacing = (-0.3).sp
                 )
                 Text(
-                    text = "Legal Aid Navigator",
+                    text = Strings.get("app_subtitle", language),
                     fontSize = 11.sp,
-                    color = Slate400
+                    color = Emerald400
                 )
             }
         }
 
+        // Bilingual Toggle in Sidebar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(Slate800)
+                .border(1.dp, Slate700, RoundedCornerShape(10.dp))
+                .clickable { onToggleLanguage() }
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .testTag("bilingual_toggle_sidebar")
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (language == AppLanguage.URDU) "زبان: اردو (اردو)" else "Language: English",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Slate100
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Emerald400.copy(alpha = 0.2f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = if (language == AppLanguage.URDU) "تبدیل کریں" else "Switch",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Emerald400
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
         Text(
-            text = "NAVIGATION",
+            text = if (language == AppLanguage.URDU) "رہنمائی و مینیو" else "NAVIGATION",
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 1.5.sp,
+            letterSpacing = 1.2.sp,
             color = Slate500,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
         )
-
-        Spacer(modifier = Modifier.height(4.dp))
 
         // Navigation Items
         navigationItems.forEach { item ->
             val isSelected = currentNav == item.dest
+            val title = if (language == AppLanguage.URDU) item.titleUr else item.titleEn
+            val badgeCount = when (item.dest) {
+                NavigationDest.ACTIVE_CASES -> casesCount
+                NavigationDest.DOCUMENT_VAULT -> vaultCount
+                else -> 0
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(
-                        if (isSelected) Emerald400.copy(alpha = 0.12f) else Color.Transparent
+                        if (isSelected) Emerald400.copy(alpha = 0.14f) else Color.Transparent
                     )
                     .border(
                         width = 1.dp,
-                        color = if (isSelected) Emerald400.copy(alpha = 0.35f) else Color.Transparent,
+                        color = if (isSelected) Emerald400.copy(alpha = 0.4f) else Color.Transparent,
                         shape = RoundedCornerShape(10.dp)
                     )
                     .clickable { onSelectNav(item.dest) }
@@ -330,29 +460,29 @@ fun Sidebar(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = if (isSelected) item.activeIcon else item.inactiveIcon,
-                        contentDescription = item.title,
+                        contentDescription = title,
                         tint = if (isSelected) Emerald400 else Slate400,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = item.title,
+                        text = title,
                         fontSize = 14.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         color = if (isSelected) Slate100 else Slate400
                     )
                 }
 
-                if (item.dest == NavigationDest.ACTIVE_CASES && casesCount > 0) {
+                if (badgeCount > 0) {
                     Box(
                         modifier = Modifier
-                            .size(20.dp)
+                            .size(22.dp)
                             .clip(CircleShape)
                             .background(Emerald400),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = casesCount.toString(),
+                            text = badgeCount.toString(),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = Slate900
@@ -364,12 +494,12 @@ fun Sidebar(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Caseworker Online Badge
+        // Citizen Protection Card
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(Slate800.copy(alpha = 0.6f))
+                .background(Slate800.copy(alpha = 0.7f))
                 .border(1.dp, Slate700, RoundedCornerShape(12.dp))
                 .padding(14.dp)
         ) {
@@ -383,7 +513,7 @@ fun Sidebar(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "AI Caseworker Active",
+                        text = if (language == AppLanguage.URDU) "کیس ورکر فعال ہے" else "AI Caseworker Active",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = Slate100
@@ -391,7 +521,10 @@ fun Sidebar(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Empathetic advocacy and rights defense 24/7.",
+                    text = if (language == AppLanguage.URDU)
+                        "شہری حقوق، سرکاری محکموں سے داد رسی اور قانونی رہنمائی 24/7۔"
+                    else
+                        "Pakistani administrative grievance and welfare defense 24/7.",
                     fontSize = 11.sp,
                     color = Slate400,
                     lineHeight = 15.sp
@@ -403,7 +536,8 @@ fun Sidebar(
 
 @Composable
 fun MobileTopBar(
-    currentNav: NavigationDest,
+    language: AppLanguage,
+    onToggleLanguage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -411,17 +545,18 @@ fun MobileTopBar(
             .fillMaxWidth()
             .background(Slate900.copy(alpha = 0.95f))
             .border(1.dp, Slate800)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // App Title and Icon
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(34.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(
                             brush = Brush.linearGradient(
@@ -434,40 +569,67 @@ fun MobileTopBar(
                         imageVector = Icons.Default.Security,
                         contentDescription = "CivicSync Logo",
                         tint = Slate900,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(
-                        text = "CivicSync AI",
-                        fontSize = 16.sp,
+                        text = Strings.get("app_title", language),
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Slate100,
                         letterSpacing = (-0.3).sp
                     )
                     Text(
-                        text = "Empathetic Legal Aid",
+                        text = Strings.get("app_subtitle", language),
                         fontSize = 10.sp,
-                        color = Slate400
+                        color = Emerald400
                     )
                 }
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(Emerald400)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "Online",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Emerald400
-                )
+            // Bilingual Toggle Capsule (Phase 1 Prominent Top Bar Requirement)
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Slate800)
+                    .border(1.dp, Emerald400.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
+                    .clickable { onToggleLanguage() }
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                    .testTag("bilingual_toggle_topbar")
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (language == AppLanguage.URDU) Emerald400 else Color.Transparent)
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "اردو",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (language == AppLanguage.URDU) Slate900 else Slate400
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (language == AppLanguage.ENGLISH) Emerald400 else Color.Transparent)
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "EN",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (language == AppLanguage.ENGLISH) Slate900 else Slate400
+                        )
+                    }
+                }
             }
         }
     }
@@ -476,6 +638,9 @@ fun MobileTopBar(
 @Composable
 fun MobileBottomBar(
     currentNav: NavigationDest,
+    language: AppLanguage,
+    casesCount: Int,
+    vaultCount: Int,
     onSelectNav: (NavigationDest) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -489,20 +654,46 @@ fun MobileBottomBar(
     ) {
         navigationItems.forEach { item ->
             val isSelected = currentNav == item.dest
+            val title = if (language == AppLanguage.URDU) item.titleUr else item.titleEn
+            val badgeCount = when (item.dest) {
+                NavigationDest.ACTIVE_CASES -> casesCount
+                NavigationDest.DOCUMENT_VAULT -> vaultCount
+                else -> 0
+            }
+
             NavigationBarItem(
                 selected = isSelected,
                 onClick = { onSelectNav(item.dest) },
                 icon = {
-                    Icon(
-                        imageVector = if (isSelected) item.activeIcon else item.inactiveIcon,
-                        contentDescription = item.title,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    if (badgeCount > 0) {
+                        BadgedBox(
+                            badge = {
+                                Badge(
+                                    containerColor = Emerald400,
+                                    contentColor = Slate900
+                                ) {
+                                    Text(badgeCount.toString(), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (isSelected) item.activeIcon else item.inactiveIcon,
+                                contentDescription = title,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = if (isSelected) item.activeIcon else item.inactiveIcon,
+                            contentDescription = title,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 },
                 label = {
                     Text(
-                        text = item.title,
-                        fontSize = 11.sp,
+                        text = title,
+                        fontSize = 10.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                     )
                 },

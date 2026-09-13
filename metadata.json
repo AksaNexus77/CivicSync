@@ -1,5 +1,5 @@
 {
-  "name": "CivicSync AI",
+  "name": "CivicSync Pakistan",
   "description": "Empathetic Pakistani legal aid and social welfare AI helping citizens navigate NADRA, BISP, Sehat Card, EOBI, and Wafaqi Mohtasib grievances.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
