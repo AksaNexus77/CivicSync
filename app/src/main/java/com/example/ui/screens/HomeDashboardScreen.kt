@@ -94,6 +94,7 @@ import java.util.Locale
  */
 @Composable
 fun HomeDashboardScreen(
+    userName: String? = null,
     cases: List<SavedCaseEntity>,
     vaultCount: Int,
     offlineGuidesCount: Int,
@@ -147,6 +148,10 @@ fun HomeDashboardScreen(
             contentPadding = PaddingValues(top = 16.dp, bottom = 84.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item(key = "greeting_banner") {
+                GreetingBanner(userName = userName)
+            }
+
             // Header & Sync Banner
             item(key = "header_banner") {
                 Column {
@@ -573,6 +578,56 @@ private fun ExampleCaseCard(title: String, description: String) {
             Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Slate100)
             Spacer(modifier = Modifier.height(4.dp))
             Text(description, fontSize = 12.sp, color = Slate400, lineHeight = 16.sp)
+        }
+    }
+}
+
+@Composable
+fun GreetingBanner(userName: String?, modifier: Modifier = Modifier) {
+    val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+    val greetingPrefix = if (hour in 5..17) "Assalam-o-Alaikum" else "Welcome back"
+    val displayName = userName?.split(" ")?.firstOrNull() ?: "Citizen"
+    val fullGreeting = if (userName.isNullOrBlank()) "Welcome, Citizen" else "$greetingPrefix, $displayName"
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Slate800.copy(alpha = 0.6f))
+            .border(1.dp, Slate700, RoundedCornerShape(12.dp))
+            .padding(16.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Emerald400.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = displayName.firstOrNull()?.toString() ?: "C",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Emerald400
+                )
+            }
+            Column {
+                Text(
+                    text = fullGreeting,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Slate100
+                )
+                Text(
+                    text = "Ready to manage your cases?",
+                    fontSize = 13.sp,
+                    color = Slate400
+                )
+            }
         }
     }
 }

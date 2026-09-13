@@ -329,6 +329,7 @@ fun MainScreenRouter(
         }
         NavigationDest.HOME -> {
             HomeDashboardScreen(
+                userName = viewModel.getUserFirstName(),
                 cases = savedCases,
                 vaultCount = vaultDocs.size,
                 offlineGuidesCount = offlineChecklists.size,

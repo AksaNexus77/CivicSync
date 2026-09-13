@@ -679,6 +679,14 @@ class CivicSyncViewModel @Inject constructor(
     /**
      * Complete account and data deletion: deletes local database records and Supabase cloud records.
      */
+    fun getUserFirstName(): String? {
+        val email = authService.getCurrentUserEmail() ?: return null
+        val namePart = email.substringBefore("@")
+        if (namePart.isBlank()) return null
+        // Capitalize first letter
+        return namePart.replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() }
+    }
+
     fun deleteAccountAndAllData() {
         viewModelScope.launch {
             repository.clearAllUserData()
