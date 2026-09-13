@@ -1,0 +1,7 @@
+{
+  "name": "CivicSync AI",
+  "description": "Empathetic AI caseworker helping individuals navigate complex bureaucracy, identify benefits, draft appeal letters, and create advocacy scripts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
