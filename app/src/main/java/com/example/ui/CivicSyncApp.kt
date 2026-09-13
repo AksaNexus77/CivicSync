@@ -337,7 +337,9 @@ fun MainScreenRouter(
                 onViewCase = { caseEntity -> viewModel.viewSavedCase(caseEntity) },
                 onUpdateStatus = { caseId, status -> viewModel.updateCaseStatus(caseId, status) },
                 onDeleteCase = { caseId -> viewModel.deleteCase(caseId) },
-                onSyncNow = { viewModel.syncCasework() }
+                onSyncNow = { viewModel.syncCasework() },
+                onNavigateToVault = { viewModel.navigateTo(NavigationDest.DOCUMENT_VAULT) },
+                onNavigateToResources = { viewModel.navigateTo(NavigationDest.RESOURCES) }
             )
         }
         NavigationDest.INTAKE_WIZARD -> {

@@ -65,6 +65,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import com.example.data.local.CaseStatus
 import com.example.data.local.SavedCaseEntity
 import com.example.ui.components.GlassmorphicCard
@@ -100,6 +103,8 @@ fun HomeDashboardScreen(
     onUpdateStatus: (caseId: String, newStatus: String) -> Unit,
     onDeleteCase: (caseId: String) -> Unit,
     onSyncNow: () -> Unit = {},
+    onNavigateToVault: () -> Unit,
+    onNavigateToResources: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var selectedFilter by remember { mutableStateOf<String?>("ALL") }
@@ -192,6 +197,7 @@ fun HomeDashboardScreen(
                             count = cases.size.toString(),
                             icon = Icons.Default.Folder,
                             tint = Indigo400,
+                            onClick = { selectedFilter = "ALL" },
                             modifier = Modifier.weight(1f)
                         )
                         MetricCard(
@@ -199,6 +205,7 @@ fun HomeDashboardScreen(
                             count = vaultCount.toString(),
                             icon = Icons.Default.Lock,
                             tint = Emerald400,
+                            onClick = onNavigateToVault,
                             modifier = Modifier.weight(1f)
                         )
                         MetricCard(
@@ -206,6 +213,7 @@ fun HomeDashboardScreen(
                             count = offlineGuidesCount.toString(),
                             icon = Icons.Default.OfflinePin,
                             tint = Amber400,
+                            onClick = onNavigateToResources,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -272,10 +280,21 @@ private fun MetricCard(
     count: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     tint: Color,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (isPressed) 0.95f else 1f)
+
     GlassmorphicCard(
-        modifier = modifier,
+        modifier = modifier
+            .scale(scale)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            ),
         backgroundColor = Slate800.copy(alpha = 0.4f),
         borderColor = Slate700.copy(alpha = 0.5f)
     ) {
