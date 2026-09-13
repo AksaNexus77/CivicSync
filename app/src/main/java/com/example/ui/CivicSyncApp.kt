@@ -183,7 +183,7 @@ fun CivicSyncApp(
                     Sidebar(
                         currentNav = currentNav,
                         language = language,
-                        casesCount = savedCases.size,
+                        hasPendingCases = savedCases.any { it.status == com.example.data.local.CaseStatus.PENDING.name },
                         vaultCount = vaultDocs.size,
                         onSelectNav = { viewModel.navigateTo(it) },
                         onToggleLanguage = { viewModel.toggleLanguage() },
@@ -237,7 +237,7 @@ fun CivicSyncApp(
                         MobileBottomBar(
                             currentNav = currentNav,
                             language = language,
-                            casesCount = savedCases.size,
+                            hasPendingCases = savedCases.any { it.status == com.example.data.local.CaseStatus.PENDING.name },
                             vaultCount = vaultDocs.size,
                             onSelectNav = { viewModel.navigateTo(it) },
                             modifier = Modifier.navigationBarsPadding()
@@ -311,45 +311,50 @@ fun MainScreenRouter(
     val authError by viewModel.authError.collectAsStateWithLifecycle()
     val isUserLoggedIn by viewModel.isUserLoggedIn.collectAsStateWithLifecycle()
 
-    when (currentNav) {
-        NavigationDest.ONBOARDING -> {
-            OnboardingScreen(
-                onFinishOnboarding = { viewModel.completeOnboarding() }
-            )
-        }
-        NavigationDest.AUTH -> {
-            AuthScreen(
-                isLoading = authLoading,
-                errorMessage = authError,
-                onSignIn = { email, pass -> viewModel.signIn(email, pass) },
-                onSignUp = { email, pass -> viewModel.signUp(email, pass) },
-                onGoogleSignIn = { viewModel.continueAsGuest() },
-                onContinueGuest = { viewModel.continueAsGuest() }
-            )
-        }
-        NavigationDest.HOME -> {
-            HomeDashboardScreen(
-                userName = viewModel.getUserFirstName(),
-                cases = savedCases,
-                vaultCount = vaultDocs.size,
-                offlineGuidesCount = offlineChecklists.size,
-                language = language,
-                onStartNewCase = { viewModel.startNewCase() },
-                onViewCase = { caseEntity -> viewModel.viewSavedCase(caseEntity) },
-                onUpdateStatus = { caseId, status -> viewModel.updateCaseStatus(caseId, status) },
-                onDeleteCase = { caseId -> viewModel.deleteCase(caseId) },
-                onSyncNow = { viewModel.syncCasework() },
-                onNavigateToVault = { viewModel.navigateTo(NavigationDest.DOCUMENT_VAULT) },
-                onNavigateToResources = { viewModel.navigateTo(NavigationDest.RESOURCES) }
-            )
-        }
-        NavigationDest.INTAKE_WIZARD -> {
-            AnimatedContent(
-                targetState = uiState,
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
-                label = "home_wizard_transition"
-            ) { state ->
-                when (state) {
+    AnimatedContent(
+        targetState = currentNav,
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        label = "tab_transition"
+    ) { navState ->
+        when (navState) {
+            NavigationDest.ONBOARDING -> {
+                OnboardingScreen(
+                    onFinishOnboarding = { viewModel.completeOnboarding() }
+                )
+            }
+            NavigationDest.AUTH -> {
+                AuthScreen(
+                    isLoading = authLoading,
+                    errorMessage = authError,
+                    onSignIn = { email, pass -> viewModel.signIn(email, pass) },
+                    onSignUp = { email, pass -> viewModel.signUp(email, pass) },
+                    onGoogleSignIn = { viewModel.continueAsGuest() },
+                    onContinueGuest = { viewModel.continueAsGuest() }
+                )
+            }
+            NavigationDest.HOME -> {
+                HomeDashboardScreen(
+                    userName = viewModel.getUserFirstName(),
+                    cases = savedCases,
+                    vaultCount = vaultDocs.size,
+                    offlineGuidesCount = offlineChecklists.size,
+                    language = language,
+                    onStartNewCase = { viewModel.startNewCase() },
+                    onViewCase = { caseEntity -> viewModel.viewSavedCase(caseEntity) },
+                    onUpdateStatus = { caseId, status -> viewModel.updateCaseStatus(caseId, status) },
+                    onDeleteCase = { caseId -> viewModel.deleteCase(caseId) },
+                    onSyncNow = { viewModel.syncCasework() },
+                    onNavigateToVault = { viewModel.navigateTo(NavigationDest.DOCUMENT_VAULT) },
+                    onNavigateToResources = { viewModel.navigateTo(NavigationDest.RESOURCES) }
+                )
+            }
+            NavigationDest.INTAKE_WIZARD -> {
+                AnimatedContent(
+                    targetState = uiState,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "home_wizard_transition"
+                ) { state ->
+                    when (state) {
                     is CivicSyncUiState.Idle -> {
                         IntakeScreen(
                             situationText = state.situationText,
@@ -464,7 +469,9 @@ fun MainScreenRouter(
             )
         }
     }
+    }
 }
+
 
 /**
  * Resilient Error recovery view presenting user with localized error notice,
@@ -692,7 +699,7 @@ fun MobileTopBar(
 fun MobileBottomBar(
     currentNav: NavigationDest,
     language: AppLanguage,
-    casesCount: Int,
+    hasPendingCases: Boolean,
     vaultCount: Int,
     onSelectNav: (NavigationDest) -> Unit,
     modifier: Modifier = Modifier
@@ -709,8 +716,8 @@ fun MobileBottomBar(
                 selected = isSelected,
                 onClick = { onSelectNav(item.dest) },
                 icon = {
-                    if (item.dest == NavigationDest.ACTIVE_CASES && casesCount > 0) {
-                        BadgedBox(badge = { Badge { Text("$casesCount") } }) {
+                    if (item.dest == NavigationDest.ACTIVE_CASES && hasPendingCases) {
+                        BadgedBox(badge = { Badge() }) {
                             Icon(
                                 imageVector = if (isSelected) item.activeIcon else item.inactiveIcon,
                                 contentDescription = stringResource(item.titleResId),
@@ -758,7 +765,7 @@ fun MobileBottomBar(
 fun Sidebar(
     currentNav: NavigationDest,
     language: AppLanguage,
-    casesCount: Int,
+    hasPendingCases: Boolean,
     vaultCount: Int,
     onSelectNav: (NavigationDest) -> Unit,
     onToggleLanguage: () -> Unit,
