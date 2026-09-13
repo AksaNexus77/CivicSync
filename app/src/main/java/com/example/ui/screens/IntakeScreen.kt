@@ -90,6 +90,10 @@ import com.example.util.AppLanguage
 import com.example.util.Strings
 import com.example.util.layoutDirection
 
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+
 /**
  * Senior-level Intake Screen implementation incorporating:
  * - Dynamic Right-to-Left (RTL) layout switching via [LocalLayoutDirection].
@@ -99,7 +103,7 @@ import com.example.util.layoutDirection
  * - Speech-to-Text dictation in Urdu, Arabic, or English.
  * - Multi-jurisdiction support (Pakistan, USA, UK, Global).
  */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalPermissionsApi::class)
 @Composable
 fun IntakeScreen(
     situationText: String,
@@ -125,6 +129,11 @@ fun IntakeScreen(
     var isCountryDropdownOpen by remember { mutableStateOf(false) }
     var isListeningByVoice by remember { mutableStateOf(false) }
 
+    // Audio Permission State
+    val audioPermissionState = rememberPermissionState(
+        android.Manifest.permission.RECORD_AUDIO
+    )
+
     // Speech-to-text Activity Result Launcher
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -141,6 +150,11 @@ fun IntakeScreen(
     }
 
     fun launchSpeechInput() {
+        if (!audioPermissionState.status.isGranted) {
+            audioPermissionState.launchPermissionRequest()
+            return
+        }
+
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -159,6 +173,7 @@ fun IntakeScreen(
             isListeningByVoice = false
         }
     }
+
 
     val infiniteTransition = rememberInfiniteTransition(label = "pulseTransition")
     val pulseScale by infiniteTransition.animateFloat(
@@ -365,24 +380,6 @@ fun IntakeScreen(
                                 lineHeight = 22.sp
                             )
                         }
-
-                        // Speech-to-text mic trigger
-                        IconButton(
-                            onClick = { launchSpeechInput() },
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(if (isListeningByVoice) Rose400.copy(alpha = 0.25f) else Indigo400.copy(alpha = 0.15f))
-                                .border(1.dp, if (isListeningByVoice) Rose400 else Indigo400.copy(alpha = 0.4f), CircleShape)
-                                .testTag("speech_to_text_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Mic,
-                                contentDescription = stringResource(R.string.cd_mic_record),
-                                tint = if (isListeningByVoice) Rose400 else Indigo400,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
                     }
 
                     if (isListeningByVoice) {
@@ -407,6 +404,25 @@ fun IntakeScreen(
                                 fontSize = 16.sp,
                                 lineHeight = 24.sp
                             )
+                        },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { launchSpeechInput() },
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isListeningByVoice) Rose400.copy(alpha = 0.25f) else Indigo400.copy(alpha = 0.15f))
+                                    .border(1.dp, if (isListeningByVoice) Rose400 else Indigo400.copy(alpha = 0.4f), CircleShape)
+                                    .testTag("speech_to_text_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Mic,
+                                    contentDescription = stringResource(R.string.cd_mic_record),
+                                    tint = if (isListeningByVoice) Rose400 else Indigo400,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
