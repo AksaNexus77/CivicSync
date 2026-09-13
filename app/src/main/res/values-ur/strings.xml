@@ -1,0 +1,79 @@
+<resources>
+    <string name="app_name">سوِک سِنک گلوبل</string>
+    <string name="app_subtitle">اے آئی قانونی امداد و سماجی فلاحی رہنماء</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">ہوم</string>
+    <string name="nav_active_cases">کیسز</string>
+    <string name="nav_vault">والٹ</string>
+    <string name="nav_offline">گائیڈز</string>
+    <string name="nav_resources">ہیلپ لائنز</string>
+    <string name="nav_settings">ترتیبات</string>
+
+    <!-- Intake Hero -->
+    <string name="hero_badge">عالمی قانونی امداد و سماجی تحفظ اے آئی</string>
+    <string name="hero_title">آپ کو اکیلے نظام کا سامنا کرنے کی ضرورت نہیں۔</string>
+    <string name="hero_desc">شہری شناخت، سماجی تحفظ، صحت کی فراہمی اور انتظامی شکایات کے لیے مستند رہنمائی حاصل کریں۔</string>
+    <string name="preset_title">کسی عام شہری مسئلے کا نمونہ منتخب کریں:</string>
+    
+    <!-- Intake Steps -->
+    <string name="step1_title">1. اپنا مسئلہ یا صورتحال بیان کریں</string>
+    <string name="step1_subtitle">سرکاری نوٹس، وظیفہ کی بندش، شناختی کارڈ مسائل یا ہسپتال انکار کی تفصیل لکھیں۔</string>
+    <string name="textarea_placeholder">اپنے مسئلے، سرکاری نوٹس یا پیش آنے والی مشکلات کی تفصیل یہاں لکھیں...</string>
+    <string name="speak_to_type">بول کر لکھوائیں</string>
+    <string name="listening">سماعت جاری ہے… اب بولیے</string>
+    <string name="step2_title">2. دائرۂ اختیار اور فوری ضرورت</string>
+    <string name="step2_subtitle">قانونی قوانین اور محتسب کے دفاتر علاقے اور ملک کے مطابق مختلف ہوتے ہیں۔</string>
+    <string name="country_label">ملک</string>
+    <string name="region_label">صوبہ / ریاست / علاقہ</string>
+    <string name="urgency_label">فوری ضرورت کا درجہ</string>
+    <string name="generate_btn">قانونی لائحۂ عمل تیار کریں ✨</string>
+
+    <!-- Urgencies -->
+    <string name="urgency_immediate">انتہائی ہنگامی (24 تا 48 گھنٹے)</string>
+    <string name="urgency_week">اس ہفتے (3 تا 7 دن)</string>
+    <string name="urgency_planning">انتظامی شکایت (باقاعدہ کارروائی)</string>
+
+    <!-- Presets -->
+    <string name="preset_bisp">بائیو میٹرک / شناخت کی تصدیق کا انکار</string>
+    <string name="preset_sehat">ہنگامی طبی علاج یا ہیلتھ انشورنس انکار</string>
+    <string name="preset_snap">سماجی تحفظ یا راشن فنڈ بندش</string>
+    <string name="preset_eviction">غیر قانونی بے دخلی / رہائشی شکایت</string>
+
+    <!-- Action Plan Tabs -->
+    <string name="tab_eligibility">اہلیت کا خلاصہ</string>
+    <string name="tab_checklist">اقدامی فہرست</string>
+    <string name="tab_draft_letter">سرکاری درخواست</string>
+    <string name="tab_advocacy_script">ہیلپ لائن سکرپٹ</string>
+
+    <!-- Action Plan Actions -->
+    <string name="save_case_btn">کیس ڈیش بورڈ میں محفوظ کریں</string>
+    <string name="case_saved_success">کیس کامیابی سے محفوظ ہو گیا!</string>
+    <string name="copy_letter_btn">درخواست کاپی کریں</string>
+    <string name="copy_script_btn">سکرپٹ کاپی کریں</string>
+    <string name="copied_toast">کلپ بورڈ پر کاپی ہو گیا!</string>
+    <string name="listen_tts_btn">سکرپٹ سنیں (آڈیو)</string>
+    <string name="stop_tts_btn">آواز بند کریں</string>
+    <string name="tts_playing">سکرپٹ سنایا جا رہا ہے…</string>
+
+    <!-- Error & Offline -->
+    <string name="error_general_title">سروس دستیاب نہیں ہے</string>
+    <string name="error_general_message">اے آئی سسٹم سے رابطہ ممکن نہیں ہو سکا۔ آپ دوبارہ کوشش کر سکتے ہیں یا آف لائن گائیڈ دیکھ سکتے ہیں۔</string>
+    <string name="retry_btn">دوبارہ کوشش کریں</string>
+    <string name="offline_contingency_btn">آف لائن متبادل لائحۂ عمل دیکھیں</string>
+    <string name="offline_contingency_badge">آف لائن متبادل موڈ</string>
+    <string name="back_to_intake">شروع میں واپس جائیں</string>
+
+    <!-- Accessibility Descriptions -->
+    <string name="cd_copy_letter">قانونی درخواست کلپ بورڈ پر کاپی کریں</string>
+    <string name="cd_speak_script">ہیلپ لائن سکرپٹ کی آڈیو سنیں</string>
+    <string name="cd_stop_tts">آڈیو بند کریں</string>
+    <string name="cd_toggle_check">اقدام کی تکمیل تبدیل کریں</string>
+    <string name="cd_mic_record">آواز سے مسئلہ ریکارڈ کریں</string>
+    <string name="cd_back_button">واپس جائیں</string>
+    <string name="cd_language_toggle">ایپ کی زبان تبدیل کریں</string>
+
+    <!-- Skeleton Shimmer -->
+    <string name="skeleton_loading_title">متعلقہ قوانین اور سرکاری اسکیموں کا جائزہ لیا جا رہا ہے…</string>
+    <string name="skeleton_loading_desc">شناختی ریکارڈ، قانونی اپیل کے راستے اور باضابطہ درخواست تیار کی جا رہی ہے۔</string>
+</resources>

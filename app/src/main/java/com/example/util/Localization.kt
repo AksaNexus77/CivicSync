@@ -6,7 +6,8 @@ import androidx.compose.ui.unit.LayoutDirection
 
 enum class AppLanguage(val code: String, val labelEn: String, val labelNative: String) {
     ENGLISH("en", "English", "English"),
-    URDU("ur", "Urdu", "اردو")
+    URDU("ur", "Urdu", "اردو"),
+    ARABIC("ar", "Arabic", "العربية")
 }
 
 object UrduTypography {
@@ -28,7 +29,7 @@ object UrduTypography {
 
 fun AppLanguage.layoutDirection(): LayoutDirection = when (this) {
     AppLanguage.ENGLISH -> LayoutDirection.Ltr
-    AppLanguage.URDU -> LayoutDirection.Rtl
+    AppLanguage.URDU, AppLanguage.ARABIC -> LayoutDirection.Rtl
 }
 
 object Strings {
@@ -36,7 +37,7 @@ object Strings {
         val entry = dictionary[key] ?: return key
         return when (lang) {
             AppLanguage.ENGLISH -> entry.first
-            AppLanguage.URDU -> entry.second
+            AppLanguage.URDU, AppLanguage.ARABIC -> entry.second
         }
     }
 

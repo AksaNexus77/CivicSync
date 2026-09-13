@@ -3,20 +3,22 @@ package com.example.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.api.GeminiCaseworkerService
+import com.example.data.api.CivicSyncApiService
+import com.example.data.api.CivicSyncApiServiceImpl
 import com.example.data.local.CaseStatus
 import com.example.data.local.CivicSyncDatabase
-import com.example.data.local.CivicSyncRepository
 import com.example.data.local.OfflineChecklistEntity
 import com.example.data.local.SavedCaseEntity
-import com.example.data.local.VaultDocType
 import com.example.data.local.VaultDocumentEntity
 import com.example.data.model.ChecklistItem
 import com.example.data.model.CivicActionPlan
 import com.example.data.model.CivicResource
+import com.example.data.repository.CivicSyncRepository
+import com.example.data.repository.CivicSyncRepositoryImpl
 import com.example.util.AppLanguage
 import com.example.util.SpeechAndHapticHelper
 import com.example.util.Strings
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,112 +28,83 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
-enum class WizardStep {
-    INTAKE,
-    PROCESSING,
-    ACTION_PLAN
-}
+/**
+ * Senior-level ViewModel coordinating clean architecture data flow between the AI
+ * Caseworker repository, local Room persistence, and the Jetpack Compose UI.
+ *
+ * Implements Dependency Injection via Dagger Hilt, uses [StateFlow] exclusively for
+ * reactive state representation, and leverages the [CivicSyncUiState] sealed interface
+ * to drive the 3-step Intake -> Processing -> Action Plan wizard cleanly.
+ */
+@HiltViewModel
+class CivicSyncViewModel @Inject constructor(
+    private val repository: CivicSyncRepository,
+    application: Application
+) : AndroidViewModel(application) {
 
-enum class NavigationDest {
-    HOME,
-    ACTIVE_CASES,
-    DOCUMENT_VAULT,
-    OFFLINE_GUIDES,
-    RESOURCES,
-    SETTINGS
-}
-
-enum class PlanTab {
-    ELIGIBILITY,
-    CHECKLIST,
-    DRAFT_LETTER,
-    ADVOCACY_SCRIPT
-}
-
-data class CivicSyncUiState(
-    val language: AppLanguage = AppLanguage.URDU,
-    val currentStep: WizardStep = WizardStep.INTAKE,
-    val currentNav: NavigationDest = NavigationDest.HOME,
-    val activeTab: PlanTab = PlanTab.ELIGIBILITY,
-    val situationText: String = "",
-    val urgencyLevel: String = "Immediate Crisis",
-    val locationText: String = "Punjab",
-    val isLoading: Boolean = false,
-    val loadingMessageIndex: Int = 0,
-    val currentPlan: CivicActionPlan? = null,
-    val errorMessage: String? = null,
-    val userToast: String? = null,
-    val isRecordingVoice: Boolean = false,
-    val selectedCaseReview: SavedCaseEntity? = null,
-    val resources: List<CivicResource> = defaultPakistaniResources()
-)
-
-fun defaultPakistaniResources(): List<CivicResource> = listOf(
-    CivicResource(
-        title = "Benazir Income Support Programme (BISP)",
-        category = "Social Protection & Kafalat",
-        description = "Official national helpline for BISP Kafalat quarterly stipend, dynamic registry, and biometric dispute resolution.",
-        contact = "0800-26477",
-        badge = "Toll-Free"
-    ),
-    CivicResource(
-        title = "Wafaqi Mohtasib (Federal Ombudsman Secretariat)",
-        category = "Administrative Grievance Tribunal",
-        description = "Statutory constitutional body resolving public complaints against federal agencies (NADRA, BISP, EOBI, WAPDA, SNGPL) free of cost.",
-        contact = "1055",
-        badge = "Free Redressal"
-    ),
-    CivicResource(
-        title = "NADRA Citizen Facilitation Helpline",
-        category = "Civil Registration & CNIC",
-        description = "Direct helpline for inquiries regarding blocked CNICs, Family Registration Certificates (FRC), CRC/B-Forms, and biometric verification boards.",
-        contact = "1777",
-        badge = "Helpline"
-    ),
-    CivicResource(
-        title = "Sehat Sahulat Program / Sehat Card Plus",
-        category = "Universal Health Coverage",
-        description = "Free indoor medical care, surgical treatment, and emergency hospitalization coverage for citizens across Pakistan.",
-        contact = "0800-09009",
-        badge = "Healthcare"
-    ),
-    CivicResource(
-        title = "Pakistan Bait-ul-Mal (PBM) Emergency Assistance",
-        category = "Mustahiqeen & Zakat Relief",
-        description = "Financial assistance, life-saving medical grants, artificial limbs, and education stipends for impoverished individuals.",
-        contact = "0800-66666",
-        badge = "Emergency Aid"
-    ),
-    CivicResource(
-        title = "Legal Aid Society & Sindh Legal Advisory Call Center",
-        category = "Pro Bono Legal Representation",
-        description = "Free civil, family, and criminal legal advice provided by licensed high court advocates and legal aid caseworkers.",
-        contact = "0800-70806",
-        badge = "Free Counsel"
+    /**
+     * Fallback secondary constructor enabling seamless previewing, unit tests, and
+     * runtime instantiation without requiring runtime Hilt container initialization.
+     */
+    constructor(application: Application) : this(
+        repository = CivicSyncRepositoryImpl(
+            apiService = CivicSyncApiServiceImpl(
+                httpClient = OkHttpClient.Builder()
+                    .connectTimeout(60, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS)
+                    .writeTimeout(60, TimeUnit.SECONDS)
+                    .build()
+            ),
+            database = CivicSyncDatabase.getDatabase(application)
+        ),
+        application = application
     )
-)
-
-class CivicSyncViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository: CivicSyncRepository by lazy {
-        val db = CivicSyncDatabase.getDatabase(application)
-        CivicSyncRepository(db)
-    }
 
     private val speechHelper: SpeechAndHapticHelper by lazy {
         SpeechAndHapticHelper(application)
     }
 
-    private val _uiState = MutableStateFlow(CivicSyncUiState())
+    // --- StateFlow Architecture ---
+
+    /**
+     * Core wizard state flow managing Idle (Intake), Loading (Skeleton Shimmer),
+     * Success (Action Plan), and Error (with Retry & Offline Fallback).
+     */
+    private val _uiState = MutableStateFlow<CivicSyncUiState>(CivicSyncUiState.Idle())
     val uiState: StateFlow<CivicSyncUiState> = _uiState.asStateFlow()
 
-    // Room Database Observables
+    /**
+     * Selected application language with RTL awareness.
+     */
+    private val _currentLanguage = MutableStateFlow(AppLanguage.URDU)
+    val currentLanguage: StateFlow<AppLanguage> = _currentLanguage.asStateFlow()
+
+    /**
+     * Active top-level navigation destination.
+     */
+    private val _currentNav = MutableStateFlow(NavigationDest.HOME)
+    val currentNav: StateFlow<NavigationDest> = _currentNav.asStateFlow()
+
+    /**
+     * Ephemeral toast / snackbar notification message.
+     */
+    private val _userToast = MutableStateFlow<String?>(null)
+    val userToast: StateFlow<String?> = _userToast.asStateFlow()
+
+    /**
+     * Active case being inspected in historical detail.
+     */
+    private val _selectedCaseReview = MutableStateFlow<SavedCaseEntity?>(null)
+    val selectedCaseReview: StateFlow<SavedCaseEntity?> = _selectedCaseReview.asStateFlow()
+
+    // --- Room Database Observables ---
+
     val savedCases: StateFlow<List<SavedCaseEntity>> = repository.allCases
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -143,11 +116,13 @@ class CivicSyncViewModel(application: Application) : AndroidViewModel(applicatio
 
     val isPlayingTts: StateFlow<Boolean> = speechHelper.isPlayingTts
 
-    val loadingMessages = listOf(
-        "Synthesizing institutional legal precedents...",
-        "Reviewing NADRA, BISP & statutory grievance channels...",
-        "Drafting formal representation to relevant authorities...",
-        "Preparing Urdu & English citizen advocacy scripts..."
+    val resources: List<CivicResource> = defaultCivicResources()
+
+    private val loadingMessages = listOf(
+        "Synthesizing institutional legal precedents & local statutes…",
+        "Reviewing civil identity registries & statutory grievance channels…",
+        "Drafting formal administrative representation to relevant authorities…",
+        "Formulating localized citizen helpline advocacy scripts…"
     )
 
     private var loadingCycleJob: Job? = null
@@ -158,160 +133,291 @@ class CivicSyncViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    // Language Toggle
+    // --- Localization & Language ---
+
+    /**
+     * Toggles between English and Urdu/Arabic.
+     */
     fun toggleLanguage() {
-        val newLang = if (_uiState.value.language == AppLanguage.URDU) AppLanguage.ENGLISH else AppLanguage.URDU
-        _uiState.update { it.copy(language = newLang) }
+        val next = when (_currentLanguage.value) {
+            AppLanguage.URDU -> AppLanguage.ENGLISH
+            AppLanguage.ENGLISH -> AppLanguage.URDU
+            AppLanguage.ARABIC -> AppLanguage.ENGLISH
+        }
+        _currentLanguage.value = next
         performHapticFeedback()
     }
 
+    /**
+     * Sets a specific [AppLanguage].
+     */
     fun setLanguage(lang: AppLanguage) {
-        _uiState.update { it.copy(language = lang) }
+        _currentLanguage.value = lang
     }
 
-    // Input handlers
+    // --- Intake Form State Updates ---
+
+    /**
+     * Updates the citizen grievance narrative in the Idle state.
+     */
     fun onSituationChanged(text: String) {
-        _uiState.update { it.copy(situationText = text, errorMessage = null) }
+        val current = _uiState.value
+        if (current is CivicSyncUiState.Idle) {
+            _uiState.value = current.copy(situationText = text, validationError = null)
+        }
     }
 
+    /**
+     * Incorporates transcribed speech from voice input into the narrative.
+     */
     fun onSpeechRecognized(transcribedText: String) {
         if (transcribedText.isNotBlank()) {
-            val current = _uiState.value.situationText
-            val newText = if (current.isBlank()) transcribedText else "$current $transcribedText"
-            _uiState.update { it.copy(situationText = newText, errorMessage = null, isRecordingVoice = false) }
-            showToast("Speech recognized / آواز محفوظ ہو گئی")
-            performHapticFeedback()
+            val current = _uiState.value
+            if (current is CivicSyncUiState.Idle) {
+                val combined = if (current.situationText.isBlank()) {
+                    transcribedText
+                } else {
+                    "${current.situationText} $transcribedText"
+                }
+                _uiState.value = current.copy(
+                    situationText = combined,
+                    validationError = null,
+                    isRecordingVoice = false
+                )
+                showToast("Voice input transcribed / آواز محفوظ ہو گئی")
+                performHapticFeedback()
+            }
         }
     }
 
+    /**
+     * Toggles voice recording indicator state.
+     */
     fun setRecordingVoice(isRecording: Boolean) {
-        _uiState.update { it.copy(isRecordingVoice = isRecording) }
-        if (isRecording) performHapticFeedback()
-    }
-
-    fun onUrgencyChanged(level: String) {
-        _uiState.update { it.copy(urgencyLevel = level) }
-    }
-
-    fun onLocationChanged(location: String) {
-        _uiState.update { it.copy(locationText = location) }
-    }
-
-    fun selectPreset(situation: String, urgency: String, location: String) {
-        _uiState.update {
-            it.copy(
-                situationText = situation,
-                urgencyLevel = urgency,
-                locationText = location,
-                errorMessage = null
-            )
+        val current = _uiState.value
+        if (current is CivicSyncUiState.Idle) {
+            _uiState.value = current.copy(isRecordingVoice = isRecording)
+            if (isRecording) performHapticFeedback()
         }
+    }
+
+    /**
+     * Updates the urgency classification.
+     */
+    fun onUrgencyChanged(level: String) {
+        val current = _uiState.value
+        if (current is CivicSyncUiState.Idle) {
+            _uiState.value = current.copy(urgencyLevel = level)
+        }
+    }
+
+    /**
+     * Updates the selected country.
+     */
+    fun onCountryChanged(country: String) {
+        val current = _uiState.value
+        if (current is CivicSyncUiState.Idle) {
+            val defaultRegion = when {
+                country.contains("Pakistan", ignoreCase = true) -> "Punjab"
+                country.contains("United States", ignoreCase = true) -> "California"
+                country.contains("United Kingdom", ignoreCase = true) -> "London"
+                else -> "Capital Region"
+            }
+            _uiState.value = current.copy(country = country, region = defaultRegion)
+        }
+    }
+
+    /**
+     * Updates the selected region / province / state.
+     */
+    fun onRegionChanged(region: String) {
+        val current = _uiState.value
+        if (current is CivicSyncUiState.Idle) {
+            _uiState.value = current.copy(region = region)
+        }
+    }
+
+    /**
+     * Populates intake fields from a preset sample crisis.
+     */
+    fun selectPreset(situation: String, urgency: String, country: String, region: String) {
+        _uiState.value = CivicSyncUiState.Idle(
+            situationText = situation,
+            urgencyLevel = urgency,
+            country = country,
+            region = region,
+            validationError = null
+        )
         performHapticFeedback()
     }
 
-    fun populatePreset(situation: String, urgency: String, location: String) =
-        selectPreset(situation, urgency, location)
+    // --- Wizard Flow & Action Plan Generation ---
 
-    fun navigateTo(dest: NavigationDest) {
-        _uiState.update { it.copy(currentNav = dest) }
-        stopSpeech()
-    }
-
-    fun selectNav(dest: NavigationDest) = navigateTo(dest)
-
-    fun resetToIntake() = startNewIntake()
-
-    fun loadSavedCase(case: SavedCaseEntity) = viewSavedCase(case)
-
-    fun selectTab(tab: PlanTab) {
-        _uiState.update { it.copy(activeTab = tab) }
-        stopSpeech()
-    }
-
-    // Generation workflow
+    /**
+     * Initiates Action Plan synthesis via the AI caseworker repository.
+     * Transitions state from [CivicSyncUiState.Idle] -> [CivicSyncUiState.Loading] -> [CivicSyncUiState.Success]
+     * or [CivicSyncUiState.Error].
+     */
     fun generateActionPlan() {
-        val state = _uiState.value
-        val situation = state.situationText.trim()
+        val current = _uiState.value
+        val (situation, urgency, country, region) = when (current) {
+            is CivicSyncUiState.Idle -> Tuple4(current.situationText.trim(), current.urgencyLevel, current.country, current.region)
+            is CivicSyncUiState.Error -> Tuple4(current.situationText.trim(), current.urgencyLevel, current.country, current.region)
+            else -> return
+        }
+
         if (situation.isBlank()) {
-            val errMsg = Strings.get("step1_subtitle", state.language)
-            _uiState.update { it.copy(errorMessage = errMsg) }
+            val errMsg = Strings.get("step1_subtitle", _currentLanguage.value)
+            if (current is CivicSyncUiState.Idle) {
+                _uiState.value = current.copy(validationError = errMsg)
+            }
             return
         }
 
         performHapticFeedback(60L)
-        _uiState.update {
-            it.copy(
-                isLoading = true,
-                currentStep = WizardStep.PROCESSING,
-                loadingMessageIndex = 0,
-                errorMessage = null
-            )
-        }
+        _uiState.value = CivicSyncUiState.Loading(
+            situationText = situation,
+            country = country,
+            region = region,
+            messageIndex = 0,
+            message = loadingMessages.first()
+        )
 
-        startLoadingMessagesCycle()
+        startLoadingCycle()
 
         viewModelScope.launch {
-            // Include document titles from vault in prompt
             val docTitles = vaultDocuments.value.map { it.title }
+            val langCode = _currentLanguage.value.code
 
-            val result = GeminiCaseworkerService.generateActionPlan(
+            val result = repository.generateActionPlan(
                 situation = situation,
-                urgency = state.urgencyLevel,
-                location = state.locationText,
+                urgency = urgency,
+                country = country,
+                region = region,
+                language = langCode,
                 uploadedDocuments = docTitles
             )
 
             loadingCycleJob?.cancel()
 
             result.onSuccess { plan ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        currentStep = WizardStep.ACTION_PLAN,
-                        currentPlan = plan,
-                        activeTab = PlanTab.ELIGIBILITY,
-                        errorMessage = null
-                    )
-                }
+                _uiState.value = CivicSyncUiState.Success(
+                    plan = plan,
+                    activeTab = PlanTab.ELIGIBILITY,
+                    isOfflineFallback = false,
+                    country = country,
+                    region = region
+                )
                 performHapticFeedback(80L)
-            }.onFailure { err ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        currentStep = WizardStep.INTAKE,
-                        errorMessage = err.message ?: Strings.get("error_general", state.language)
-                    )
-                }
+            }.onFailure { ex ->
+                // Provide offline fallback plan alongside the error
+                val fallbackPlan = repository.getOfflineContingencyPlan(
+                    situation = situation,
+                    country = country,
+                    region = region,
+                    uploadedDocuments = docTitles
+                )
+
+                _uiState.value = CivicSyncUiState.Error(
+                    errorMessage = ex.localizedMessage ?: "Unable to contact AI caseworker engine.",
+                    situationText = situation,
+                    country = country,
+                    region = region,
+                    urgencyLevel = urgency,
+                    canRetry = true,
+                    fallbackPlan = fallbackPlan
+                )
             }
         }
     }
 
+    /**
+     * Retries plan generation following an error state.
+     */
     fun retryGeneration() {
         generateActionPlan()
     }
 
-    fun startNewIntake() {
-        _uiState.update {
-            it.copy(
-                currentStep = WizardStep.INTAKE,
-                situationText = "",
-                currentPlan = null,
-                errorMessage = null
+    /**
+     * Activates the offline contingency plan immediately if the user opts out of retrying.
+     */
+    fun useOfflineContingencyPlan() {
+        val current = _uiState.value
+        if (current is CivicSyncUiState.Error && current.fallbackPlan != null) {
+            _uiState.value = CivicSyncUiState.Success(
+                plan = current.fallbackPlan,
+                activeTab = PlanTab.ELIGIBILITY,
+                isOfflineFallback = true,
+                country = current.country,
+                region = current.region
             )
+            showToast("Loaded offline contingency guide / آف لائن گائیڈ لوڈ ہو گئی")
+            performHapticFeedback(80L)
         }
+    }
+
+    /**
+     * Resets the wizard back to the initial Intake step.
+     */
+    fun resetToIntake() {
+        val current = _uiState.value
+        val (situation, urgency, country, region) = when (current) {
+            is CivicSyncUiState.Idle -> Tuple4(current.situationText, current.urgencyLevel, current.country, current.region)
+            is CivicSyncUiState.Success -> Tuple4("", "Immediate Crisis", current.country, current.region)
+            is CivicSyncUiState.Error -> Tuple4(current.situationText, current.urgencyLevel, current.country, current.region)
+            is CivicSyncUiState.Loading -> Tuple4(current.situationText, "Immediate Crisis", current.country, current.region)
+        }
+
+        _uiState.value = CivicSyncUiState.Idle(
+            situationText = situation,
+            urgencyLevel = urgency,
+            country = country,
+            region = region
+        )
+        _selectedCaseReview.value = null
         stopSpeech()
     }
 
-    // Save Case to Room Database
-    fun saveCurrentPlanAsCase(titleOverride: String? = null, notes: String = "") {
-        val state = _uiState.value
-        val plan = state.currentPlan ?: return
+    /**
+     * Selects an active tab in the Action Plan view.
+     */
+    fun selectTab(tab: PlanTab) {
+        val current = _uiState.value
+        if (current is CivicSyncUiState.Success) {
+            _uiState.value = current.copy(activeTab = tab)
+            stopSpeech()
+        }
+    }
 
+    /**
+     * Toggles the completion status of an Action Plan checklist item.
+     */
+    fun toggleChecklistItem(itemId: String) {
+        val current = _uiState.value
+        if (current is CivicSyncUiState.Success) {
+            val updated = current.plan.actionChecklist.map { item ->
+                if (item.id == itemId) item.copy(isCompleted = !item.isCompleted) else item
+            }
+            _uiState.value = current.copy(plan = current.plan.copy(actionChecklist = updated))
+            performHapticFeedback(40L)
+        }
+    }
+
+    // --- Case Saving & Local Management ---
+
+    /**
+     * Persists the active Action Plan to the local Room database as a tracked citizen case.
+     */
+    fun saveCurrentPlanAsCase(titleOverride: String? = null, notes: String = "") {
+        val current = _uiState.value
+        if (current !is CivicSyncUiState.Success) return
+
+        val plan = current.plan
         val title = titleOverride?.ifBlank { null }
-            ?: if (state.situationText.length > 50) state.situationText.take(50) + "..." else state.situationText.ifBlank { "Citizen Welfare Case" }
+            ?: if (current.region.isNotBlank()) "Grievance Case (${current.region})" else "Citizen Hardship Case"
 
         val planJson = try {
-            val obj = JSONObject().apply {
+            JSONObject().apply {
                 val eligArray = org.json.JSONArray()
                 plan.eligibilitySummary.forEach { el ->
                     eligArray.put(JSONObject().apply {
@@ -325,37 +431,98 @@ class CivicSyncViewModel(application: Application) : AndroidViewModel(applicatio
                 val checkArray = org.json.JSONArray()
                 plan.actionChecklist.forEach { ch ->
                     checkArray.put(JSONObject().apply {
+                        put("id", ch.id)
                         put("task", ch.task)
                         put("timeline", ch.timeline)
                         put("category", ch.category)
+                        put("isCompleted", ch.isCompleted)
                     })
                 }
                 put("actionChecklist", checkArray)
-
                 put("draftLetter", plan.draftLetter)
                 put("advocacyScript", plan.advocacyScript)
                 put("disclaimer", plan.disclaimer)
-            }
-            obj.toString()
+            }.toString()
         } catch (e: Exception) {
             ""
         }
 
         viewModelScope.launch {
-            val caseEntity = SavedCaseEntity(
+            val entity = SavedCaseEntity(
                 id = UUID.randomUUID().toString(),
                 title = title,
-                situation = state.situationText,
-                province = state.locationText,
-                urgency = state.urgencyLevel,
+                situation = "Case in ${current.region}, ${current.country}",
+                province = current.region,
+                urgency = "Saved Case",
                 status = CaseStatus.PENDING.name,
                 createdAt = System.currentTimeMillis(),
                 actionPlanJson = planJson,
                 citizenNotes = notes
             )
-            repository.saveCase(caseEntity)
-            showToast(Strings.get("case_saved_success", state.language))
+            repository.saveCase(entity)
+            showToast(Strings.get("case_saved_success", _currentLanguage.value))
             performHapticFeedback(80L)
+        }
+    }
+
+    /**
+     * Loads and reviews a previously saved case record into the Action Plan view.
+     */
+    fun viewSavedCase(case: SavedCaseEntity) {
+        try {
+            val obj = JSONObject(case.actionPlanJson)
+            val eligList = mutableListOf<com.example.data.model.EligibilityItem>()
+            val eligArr = obj.optJSONArray("eligibilitySummary")
+            if (eligArr != null) {
+                for (i in 0 until eligArr.length()) {
+                    val item = eligArr.optJSONObject(i) ?: continue
+                    eligList.add(
+                        com.example.data.model.EligibilityItem(
+                            benefit = item.optString("benefit", "Benefit"),
+                            reason = item.optString("reason", "Reason"),
+                            urgency = item.optString("urgency", "Urgent")
+                        )
+                    )
+                }
+            }
+
+            val checkList = mutableListOf<ChecklistItem>()
+            val checkArr = obj.optJSONArray("actionChecklist")
+            if (checkArr != null) {
+                for (i in 0 until checkArr.length()) {
+                    val item = checkArr.optJSONObject(i) ?: continue
+                    checkList.add(
+                        ChecklistItem(
+                            id = item.optString("id", UUID.randomUUID().toString()),
+                            task = item.optString("task", "Task"),
+                            timeline = item.optString("timeline", "Immediate"),
+                            category = item.optString("category", "General"),
+                            isCompleted = item.optBoolean("isCompleted", false)
+                        )
+                    )
+                }
+            }
+
+            val plan = CivicActionPlan(
+                eligibilitySummary = eligList,
+                actionChecklist = checkList,
+                draftLetter = obj.optString("draftLetter", ""),
+                advocacyScript = obj.optString("advocacyScript", ""),
+                disclaimer = obj.optString("disclaimer", "")
+            )
+
+            _selectedCaseReview.value = case
+            _uiState.value = CivicSyncUiState.Success(
+                plan = plan,
+                activeTab = PlanTab.ELIGIBILITY,
+                isOfflineFallback = false,
+                country = "Pakistan",
+                region = case.province
+            )
+            _currentNav.value = NavigationDest.HOME
+            performHapticFeedback()
+        } catch (e: Exception) {
+            showToast("Failed loading case details")
         }
     }
 
@@ -375,34 +542,9 @@ class CivicSyncViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun viewSavedCase(case: SavedCaseEntity) {
-        try {
-            val planObj = JSONObject(case.actionPlanJson)
-            val plan = GeminiCaseworkerService.parseJsonToActionPlan(planObj)
-            _uiState.update {
-                it.copy(
-                    currentStep = WizardStep.ACTION_PLAN,
-                    currentPlan = plan,
-                    selectedCaseReview = case,
-                    situationText = case.situation,
-                    locationText = case.province,
-                    urgencyLevel = case.urgency,
-                    currentNav = NavigationDest.HOME
-                )
-            }
-            performHapticFeedback()
-        } catch (e: Exception) {
-            showToast("Could not load case details")
-        }
-    }
+    // --- Document Vault ---
 
-    // Document Vault Management
-    fun addVaultDocument(
-        title: String,
-        docType: String,
-        uriString: String? = null,
-        description: String = ""
-    ) {
+    fun addVaultDocument(title: String, docType: String, uriString: String? = null, description: String = "") {
         viewModelScope.launch {
             val doc = VaultDocumentEntity(
                 id = UUID.randomUUID().toString(),
@@ -426,18 +568,6 @@ class CivicSyncViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    // Checklist toggles
-    fun toggleChecklistItem(itemId: String) {
-        val currentPlan = _uiState.value.currentPlan ?: return
-        val updatedChecklist = currentPlan.actionChecklist.map { item ->
-            if (item.id == itemId) item.copy(isCompleted = !item.isCompleted) else item
-        }
-        _uiState.update {
-            it.copy(currentPlan = currentPlan.copy(actionChecklist = updatedChecklist))
-        }
-        performHapticFeedback(40L)
-    }
-
     fun toggleOfflineChecklist(id: String, completed: Boolean) {
         viewModelScope.launch {
             repository.toggleOfflineChecklist(id, completed)
@@ -445,9 +575,15 @@ class CivicSyncViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    // Audio & Haptics
+    // --- Navigation & Audio ---
+
+    fun navigateTo(dest: NavigationDest) {
+        _currentNav.value = dest
+        stopSpeech()
+    }
+
     fun speakAdvocacyScript(scriptText: String) {
-        speechHelper.speak(scriptText, _uiState.value.language)
+        speechHelper.speak(scriptText, _currentLanguage.value)
         performHapticFeedback()
     }
 
@@ -460,21 +596,27 @@ class CivicSyncViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun showToast(message: String) {
-        _uiState.update { it.copy(userToast = message) }
+        _userToast.value = message
         viewModelScope.launch {
             delay(3500)
-            _uiState.update { it.copy(userToast = null) }
+            _userToast.value = null
         }
     }
 
-    private fun startLoadingMessagesCycle() {
+    private fun startLoadingCycle() {
         loadingCycleJob?.cancel()
         loadingCycleJob = viewModelScope.launch {
             var index = 0
             while (true) {
-                _uiState.update { it.copy(loadingMessageIndex = index) }
                 delay(2200)
-                index = (index + 1) % 4
+                index = (index + 1) % loadingMessages.size
+                val cur = _uiState.value
+                if (cur is CivicSyncUiState.Loading) {
+                    _uiState.value = cur.copy(
+                        messageIndex = index,
+                        message = loadingMessages[index]
+                    )
+                }
             }
         }
     }
@@ -484,4 +626,51 @@ class CivicSyncViewModel(application: Application) : AndroidViewModel(applicatio
         speechHelper.shutdown()
         loadingCycleJob?.cancel()
     }
+
+    private data class Tuple4<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)
 }
+
+fun defaultCivicResources(): List<CivicResource> = listOf(
+    CivicResource(
+        title = "Benazir Income Support Programme (BISP)",
+        category = "Social Protection & Kafalat",
+        description = "Official national helpline for BISP Kafalat quarterly stipend, dynamic registry, and biometric dispute resolution.",
+        contact = "0800-26477",
+        badge = "Toll-Free"
+    ),
+    CivicResource(
+        title = "Wafaqi Mohtasib (Federal Ombudsman Secretariat)",
+        category = "Administrative Grievance Tribunal",
+        description = "Statutory constitutional body resolving public complaints against federal agencies (NADRA, BISP, EOBI, WAPDA) free of cost.",
+        contact = "1055",
+        badge = "Free Redressal"
+    ),
+    CivicResource(
+        title = "NADRA Citizen Facilitation Helpline",
+        category = "Civil Registration & CNIC",
+        description = "Direct helpline for inquiries regarding blocked CNICs, Family Registration Certificates (FRC), and biometric verification boards.",
+        contact = "1777",
+        badge = "Helpline"
+    ),
+    CivicResource(
+        title = "Sehat Sahulat Program / Sehat Card Plus",
+        category = "Universal Health Coverage",
+        description = "Free indoor medical care, surgical treatment, and emergency hospitalization coverage for citizens across Pakistan.",
+        contact = "0800-09009",
+        badge = "Healthcare"
+    ),
+    CivicResource(
+        title = "Legal Services Corporation & Civil Legal Aid",
+        category = "Pro Bono Representation (USA/Global)",
+        description = "Public interest legal defense providing emergency eviction prevention and administrative appeal advocacy.",
+        contact = "211",
+        badge = "Legal Aid"
+    ),
+    CivicResource(
+        title = "Citizens Advice Bureau & Ombudsman",
+        category = "Statutory Welfare Counseling (UK/Global)",
+        description = "Independent confidential guidance on Universal Credit, council housing rights, and unfair government decisions.",
+        contact = "0800 144 8848",
+        badge = "Counsel"
+    )
+)

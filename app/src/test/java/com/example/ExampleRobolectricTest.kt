@@ -3,12 +3,15 @@ package com.example
 import android.app.Application
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.example.data.api.GeminiCaseworkerService
+import com.example.data.api.CivicSyncApiServiceImpl
+import com.example.data.model.CivicActionPlan
+import com.example.ui.CivicSyncUiState
 import com.example.ui.CivicSyncViewModel
 import com.example.ui.PlanTab
-import com.example.ui.WizardStep
 import com.example.util.AppLanguage
-import org.json.JSONObject
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -17,75 +20,122 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+/**
+ * Enterprise Robolectric unit tests validating Clean Architecture,
+ * sealed UiState transitions, dynamic API parameters, and localized contingency plans.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class ExampleRobolectricTest {
 
-  @Test
-  fun `read string from context`() {
-    val context = ApplicationProvider.getApplicationContext<Context>()
-    val appName = context.getString(R.string.app_name)
-    assertEquals("CivicSync Pakistan", appName)
-  }
+    @Test
+    fun `read string from context matches application identity`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val appName = context.getString(R.string.app_name)
+        assertEquals("CivicSync Global", appName)
+    }
 
-  @Test
-  fun `test fallback plan generation for Pakistan welfare context`() {
-    val plan = GeminiCaseworkerService.buildEmpatheticSynthesizedPlan(
-      situation = "Meri walida ki BISP Kafalat biometric verify nahi ho rahi aur Sehat Card hospital mein reject ho gaya",
-      urgency = "Immediate Crisis",
-      location = "Punjab"
-    )
-    assertTrue(plan.eligibilitySummary.isNotEmpty())
-    assertTrue(plan.actionChecklist.isNotEmpty())
-    assertTrue(plan.draftLetter.contains("[Name]"))
-    assertTrue(plan.draftLetter.contains("[CNIC Number]"))
-    assertTrue(plan.draftLetter.contains("[Address]"))
-    assertTrue(plan.advocacyScript.contains("[CNIC Number]"))
-    assertTrue(plan.disclaimer.contains("This is AI-generated guidance, not licensed legal advice"))
-  }
+    @Test
+    fun `test offline contingency plan generation for Pakistan jurisdiction`() {
+        val service = CivicSyncApiServiceImpl(OkHttpClient())
+        val plan = service.getOfflineContingencyPlan(
+            situation = "Mother's biometric verification failed at BISP office and health card was rejected at hospital",
+            country = "Pakistan",
+            region = "Punjab"
+        )
 
-  @Test
-  fun `test json parser with Pakistani welfare schema`() {
-    val rawJson = """
-      {
-        "eligibilitySummary": [
-          {"benefit": "BISP Benazir Kafalat", "reason": "PMT score under eligibility threshold", "urgency": "Immediate Crisis"},
-          {"benefit": "Sehat Sahulat Card", "reason": "Empaneled indoor hospitalization", "urgency": "Immediate Crisis"}
-        ],
-        "actionChecklist": [
-          {"task": "Visit NADRA center with CNIC", "timeline": "Immediate (Day 1)", "category": "Civil Identity"},
-          {"task": "File complaint with Wafaqi Mohtasib", "timeline": "Within 48 hours", "category": "Ombudsman"}
-        ],
-        "draftLetter": "# Grievance to Deputy Commissioner\n\nI, [Name], CNIC: [CNIC Number], resident of [Address]...",
-        "advocacyScript": "Assalam-o-Alaikum, mera naam [Name] hai, CNIC [CNIC Number]...",
-        "disclaimer": "This is AI-generated guidance, not licensed legal advice. Please verify with a local lawyer or relevant government office."
-      }
-    """.trimIndent()
+        assertTrue("Eligibility summary should not be empty", plan.eligibilitySummary.isNotEmpty())
+        assertTrue("Checklist should not be empty", plan.actionChecklist.isNotEmpty())
+        assertTrue("Letter should have citizen placeholder", plan.draftLetter.contains("[Citizen Full Name]"))
+        assertTrue("Advocacy script should cite CNIC", plan.advocacyScript.contains("CNIC"))
+        assertTrue("Statutory disclaimer present", plan.disclaimer.contains("Statutory Notice"))
+    }
 
-    val parsed = GeminiCaseworkerService.parseJsonToActionPlan(JSONObject(rawJson))
-    assertEquals(2, parsed.eligibilitySummary.size)
-    assertEquals("BISP Benazir Kafalat", parsed.eligibilitySummary[0].benefit)
-    assertEquals(2, parsed.actionChecklist.size)
-    assertEquals("Visit NADRA center with CNIC", parsed.actionChecklist[0].task)
-    assertEquals("This is AI-generated guidance, not licensed legal advice. Please verify with a local lawyer or relevant government office.", parsed.disclaimer)
-  }
+    @Test
+    fun `test offline contingency plan generation for USA jurisdiction`() {
+        val service = CivicSyncApiServiceImpl(OkHttpClient())
+        val plan = service.getOfflineContingencyPlan(
+            situation = "Emergency food stamps (SNAP) cutoff unexpectedly",
+            country = "United States",
+            region = "California"
+        )
 
-  @Test
-  fun `test viewmodel state transitions and bilingual toggle`() {
-    val app = ApplicationProvider.getApplicationContext<Application>()
-    val vm = CivicSyncViewModel(app)
-    assertEquals(WizardStep.INTAKE, vm.uiState.value.currentStep)
-    assertEquals("Punjab", vm.uiState.value.locationText)
-    assertEquals(AppLanguage.URDU, vm.uiState.value.language)
+        assertTrue(plan.eligibilitySummary.any { it.benefit.contains("SNAP") })
+        assertTrue(plan.actionChecklist.any { it.task.contains("SNAP") })
+        assertTrue(plan.advocacyScript.contains("California"))
+    }
 
-    // Test bilingual toggle
-    vm.toggleLanguage()
-    assertEquals(AppLanguage.ENGLISH, vm.uiState.value.language)
+    @Test
+    fun `test strict kotlinx serialization with civic welfare schema`() {
+        val jsonParser = Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+            coerceInputValues = true
+        }
 
-    vm.onSituationChanged("BISP biometric failure report")
-    assertEquals("BISP biometric failure report", vm.uiState.value.situationText)
+        val rawJson = """
+            {
+              "eligibilitySummary": [
+                {"benefit": "BISP Benazir Kafalat", "reason": "PMT score under eligibility threshold", "urgency": "Immediate Crisis"},
+                {"benefit": "Universal Healthcare Coverage", "reason": "Indoor surgical admission", "urgency": "Immediate Crisis"}
+              ],
+              "actionChecklist": [
+                {"id": "test-id-1", "task": "Visit municipal civil registry", "timeline": "Immediate (Day 1)", "category": "Civil Identity", "isCompleted": false},
+                {"id": "test-id-2", "task": "File administrative petition", "timeline": "Within 48 hours", "category": "Ombudsman", "isCompleted": true}
+              ],
+              "draftLetter": "# Formal Representation\n\nI, [Citizen Full Name] respectfully petition...",
+              "advocacyScript": "Hello, I am calling regarding my urgent case...",
+              "disclaimer": "This is AI-generated guidance, not licensed legal advice."
+            }
+        """.trimIndent()
 
-    vm.selectTab(PlanTab.CHECKLIST)
-    assertEquals(PlanTab.CHECKLIST, vm.uiState.value.activeTab)
-  }
+        val parsed = jsonParser.decodeFromString<CivicActionPlan>(rawJson)
+        assertEquals(2, parsed.eligibilitySummary.size)
+        assertEquals("BISP Benazir Kafalat", parsed.eligibilitySummary[0].benefit)
+        assertEquals(2, parsed.actionChecklist.size)
+        assertEquals("test-id-1", parsed.actionChecklist[0].id)
+        assertEquals(false, parsed.actionChecklist[0].isCompleted)
+        assertEquals(true, parsed.actionChecklist[1].isCompleted)
+    }
+
+    @Test
+    fun `test viewmodel stateflow and sealed uistate transitions`() = runBlocking {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val vm = CivicSyncViewModel(app)
+
+        // Initial state should be Idle
+        val initialState = vm.uiState.value
+        assertTrue("Initial state must be CivicSyncUiState.Idle", initialState is CivicSyncUiState.Idle)
+        val idleState = initialState as CivicSyncUiState.Idle
+        assertEquals("Punjab", idleState.region)
+        assertEquals("Pakistan", idleState.country)
+        assertEquals(AppLanguage.URDU, vm.currentLanguage.value)
+
+        // Test multilingual toggle
+        vm.toggleLanguage()
+        assertEquals(AppLanguage.ENGLISH, vm.currentLanguage.value)
+
+        // Test form updates
+        vm.onSituationChanged("Biometric verification halted")
+        val updatedState = vm.uiState.value as CivicSyncUiState.Idle
+        assertEquals("Biometric verification halted", updatedState.situationText)
+
+        // Test country & region change
+        vm.onCountryChanged("United States")
+        val stateAfterCountry = vm.uiState.value as CivicSyncUiState.Idle
+        assertEquals("United States", stateAfterCountry.country)
+        assertEquals("California", stateAfterCountry.region)
+
+        // Test preset selection
+        vm.selectPreset(
+            situation = "Eviction notice dispute",
+            urgency = "This Week",
+            country = "United Kingdom",
+            region = "London"
+        )
+        val presetState = vm.uiState.value as CivicSyncUiState.Idle
+        assertEquals("Eviction notice dispute", presetState.situationText)
+        assertEquals("United Kingdom", presetState.country)
+        assertEquals("London", presetState.region)
+    }
 }

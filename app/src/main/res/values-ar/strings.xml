@@ -1,0 +1,79 @@
+<resources>
+    <string name="app_name">سيفيك سينك العالمي</string>
+    <string name="app_subtitle">المساعد الذكي للمساعدات القانونية والرعاية الاجتماعية</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">الرئيسية</string>
+    <string name="nav_active_cases">القضايا</string>
+    <string name="nav_vault">الخزينة</string>
+    <string name="nav_offline">الأدلة</string>
+    <string name="nav_resources">خطوط المساعدة</string>
+    <string name="nav_settings">الإعدادات</string>
+
+    <!-- Intake Hero -->
+    <string name="hero_badge">الذكاء الاصطناعي للمساعدات القانونية العالمية</string>
+    <string name="hero_title">لست وحدك في مواجهة الإجراءات القانونية والإدارية.</string>
+    <string name="hero_desc">إرشادات إنسانية متخصصة للحماية الاجتماعية، وتثبيت الهوية المدنية، ومراجعة القرارات الإدارية في جميع أنحاء العالم.</string>
+    <string name="preset_title">اختر نموذجاً لمشكلة شائعة:</string>
+    
+    <!-- Intake Steps -->
+    <string name="step1_title">1. صِف المشكلة أو الصعوبة</string>
+    <string name="step1_subtitle">وضّح الإشعارات الرسمية، رفض المعونات، إيقاف الهوية، أو رفض العلاج الطبي.</string>
+    <string name="textarea_placeholder">اكتب هنا تفاصيل المشكلة والإشعارات الإدارية التي استلمتها...</string>
+    <string name="speak_to_type">تحدث للكتابة</string>
+    <string name="listening">جارٍ الاستماع… تحدث الآن</string>
+    <string name="step2_title">2. الاختصاص القضائي ودرجة الاستعجال</string>
+    <string name="step2_subtitle">تختلف القوانين والمظالم الإدارية بحسب الدولة والمنطقة.</string>
+    <string name="country_label">الدولة</string>
+    <string name="region_label">المحافظة / الولاية / الإقليم</string>
+    <string name="urgency_label">درجة الاستعجال</string>
+    <string name="generate_btn">إنشاء خطة العمل القانونية ✨</string>
+
+    <!-- Urgencies -->
+    <string name="urgency_immediate">حالة طارئة عاجلة (24–48 ساعة)</string>
+    <string name="urgency_week">خلال هذا الأسبوع (3–7 أيام)</string>
+    <string name="urgency_planning">مظلمة إدارية رسمية (إجراءات عادية)</string>
+
+    <!-- Presets -->
+    <string name="preset_bisp">خطأ في التحقق من الهوية أو البصمة</string>
+    <string name="preset_sehat">رفض التغطية الطبية أو التأمين في المستشفى</string>
+    <string name="preset_snap">إيقاف المعونة الغذائية أو الضمان الاجتماعي</string>
+    <string name="preset_eviction">إشعار إخلاء تعسفي أو نزاع سكني</string>
+
+    <!-- Action Plan Tabs -->
+    <string name="tab_eligibility">ملخص الأهلية</string>
+    <string name="tab_checklist">قائمة الخطوات</string>
+    <string name="tab_draft_letter">الخطاب الرسمي</string>
+    <string name="tab_advocacy_script">نص المحادثة</string>
+
+    <!-- Action Plan Actions -->
+    <string name="save_case_btn">حفظ القضية في لوحة التحكم</string>
+    <string name="case_saved_success">تم حفظ القضية بنجاح!</string>
+    <string name="copy_letter_btn">نسخ الخطاب القانوني</string>
+    <string name="copy_script_btn">نسخ نص المحادثة</string>
+    <string name="copied_toast">تم النسخ إلى الحافظة!</string>
+    <string name="listen_tts_btn">الاستماع إلى النص</string>
+    <string name="stop_tts_btn">إيقاف الصوت</string>
+    <string name="tts_playing">جارٍ تشغيل النص بصوت مسموع…</string>
+
+    <!-- Error & Offline -->
+    <string name="error_general_title">الخدمة غير متوفرة حالياً</string>
+    <string name="error_general_message">تعذر الاتصال بخدمة الذكاء الاصطناعي. يمكنك المحاولة مجدداً أو الاطلاع على خطة الطوارئ بدون إنترنت.</string>
+    <string name="retry_btn">إعادة المحاولة</string>
+    <string name="offline_contingency_btn">عرض خطة الطوارئ غير المتصلة</string>
+    <string name="offline_contingency_badge">وضع الطوارئ غير المتصل</string>
+    <string name="back_to_intake">العودة إلى البداية</string>
+
+    <!-- Accessibility Descriptions -->
+    <string name="cd_copy_letter">نسخ الخطاب القانوني إلى الحافظة</string>
+    <string name="cd_speak_script">قراءة نص المحادثة بصوت عالٍ</string>
+    <string name="cd_stop_tts">إيقاف تشغيل الصوت</string>
+    <string name="cd_toggle_check">تغيير حالة إنجاز الخطوة</string>
+    <string name="cd_mic_record">تسجيل وصف صوتي للحالة</string>
+    <string name="cd_back_button">رجوع</string>
+    <string name="cd_language_toggle">تغيير لغة التطبيق</string>
+
+    <!-- Skeleton Shimmer -->
+    <string name="skeleton_loading_title">جارٍ تحليل الأطر القانونية والبرامج المحلية…</string>
+    <string name="skeleton_loading_desc">مراجعة سجلات الهوية، وقنوات الطعن أمام ديوان المظالم، وصياغة الخطاب الرسمي.</string>
+</resources>

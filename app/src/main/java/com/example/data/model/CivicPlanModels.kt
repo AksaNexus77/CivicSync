@@ -1,13 +1,16 @@
 package com.example.data.model
 
+import kotlinx.serialization.Serializable
 import java.util.UUID
 
+@Serializable
 data class EligibilityItem(
     val benefit: String,
     val reason: String,
     val urgency: String
 )
 
+@Serializable
 data class ChecklistItem(
     val id: String = UUID.randomUUID().toString(),
     val task: String,
@@ -16,6 +19,7 @@ data class ChecklistItem(
     val isCompleted: Boolean = false
 )
 
+@Serializable
 data class CivicActionPlan(
     val eligibilitySummary: List<EligibilityItem> = emptyList(),
     val actionChecklist: List<ChecklistItem> = emptyList(),

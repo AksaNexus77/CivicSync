@@ -1,3 +1,79 @@
 <resources>
-    <string name="app_name">CivicSync Pakistan</string>
+    <string name="app_name">CivicSync Global</string>
+    <string name="app_subtitle">AI-Powered Legal Aid &amp; Social Welfare Navigator</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_active_cases">Cases</string>
+    <string name="nav_vault">Vault</string>
+    <string name="nav_offline">Guides</string>
+    <string name="nav_resources">Helplines</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Intake Hero -->
+    <string name="hero_badge">GLOBAL LEGAL AID &amp; SOCIAL WELFARE AI</string>
+    <string name="hero_title">You don\'t have to face the system alone.</string>
+    <string name="hero_desc">Empathetic, localized guidance for social protection, civil identity, healthcare defense, and administrative appeals worldwide.</string>
+    <string name="preset_title">Select a sample citizen hardship:</string>
+    
+    <!-- Intake Steps -->
+    <string name="step1_title">1. Describe Your Hardship</string>
+    <string name="step1_subtitle">Include official notices, benefit denial, identity blocks, or emergency medical concerns.</string>
+    <string name="textarea_placeholder">Describe the hardship, notices received, or benefit denial...</string>
+    <string name="speak_to_type">Speak to Type</string>
+    <string name="listening">Listening… Speak now</string>
+    <string name="step2_title">2. Jurisdiction &amp; Urgency</string>
+    <string name="step2_subtitle">Welfare statutes, legal jurisdictions, and ombudsman forums vary by location.</string>
+    <string name="country_label">Country</string>
+    <string name="region_label">State / Province / Region</string>
+    <string name="urgency_label">Urgency Level</string>
+    <string name="generate_btn">Generate Action Plan ✨</string>
+
+    <!-- Urgencies -->
+    <string name="urgency_immediate">Immediate Crisis (24–48 Hours)</string>
+    <string name="urgency_week">This Week (3–7 Days)</string>
+    <string name="urgency_planning">Planning Ahead (Formal Grievance)</string>
+
+    <!-- Presets -->
+    <string name="preset_bisp">Biometric / Identity Verification Denial</string>
+    <string name="preset_sehat">Healthcare / Insurance Emergency Denial</string>
+    <string name="preset_snap">Welfare / Food Security Assistance Block</string>
+    <string name="preset_eviction">Unlawful Eviction / Housing Grievance</string>
+
+    <!-- Action Plan Tabs -->
+    <string name="tab_eligibility">Eligibility Summary</string>
+    <string name="tab_checklist">Action Checklist</string>
+    <string name="tab_draft_letter">Formal Letter</string>
+    <string name="tab_advocacy_script">Advocacy Script</string>
+
+    <!-- Action Plan Actions -->
+    <string name="save_case_btn">Save Case to Dashboard</string>
+    <string name="case_saved_success">Case saved to Active Cases dashboard!</string>
+    <string name="copy_letter_btn">Copy Legal Letter</string>
+    <string name="copy_script_btn">Copy Advocacy Script</string>
+    <string name="copied_toast">Copied to clipboard!</string>
+    <string name="listen_tts_btn">Listen to Script</string>
+    <string name="stop_tts_btn">Stop Audio</string>
+    <string name="tts_playing">Playing script…</string>
+
+    <!-- Error & Offline -->
+    <string name="error_general_title">Caseworker Service Unavailable</string>
+    <string name="error_general_message">We encountered an issue connecting to the AI caseworker service. You can retry the request or access our offline contingency guide.</string>
+    <string name="retry_btn">Retry Generation</string>
+    <string name="offline_contingency_btn">View Offline Contingency Plan</string>
+    <string name="offline_contingency_badge">Offline Contingency Mode</string>
+    <string name="back_to_intake">Back to Intake</string>
+
+    <!-- Accessibility Descriptions -->
+    <string name="cd_copy_letter">Copy formal legal letter to clipboard</string>
+    <string name="cd_speak_script">Read advocacy script aloud</string>
+    <string name="cd_stop_tts">Stop audio playback</string>
+    <string name="cd_toggle_check">Toggle checklist item completion</string>
+    <string name="cd_mic_record">Record voice description of situation</string>
+    <string name="cd_back_button">Navigate back</string>
+    <string name="cd_language_toggle">Change application language</string>
+
+    <!-- Skeleton Shimmer -->
+    <string name="skeleton_loading_title">Synthesizing statutory frameworks &amp; local programs…</string>
+    <string name="skeleton_loading_desc">Consulting civil identity registries, statutory ombudsman appeal procedures, and drafting formal representations.</string>
 </resources>
